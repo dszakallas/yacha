@@ -2,10 +2,13 @@ addons:
   apt:
     packages:
     - curl
+    - xvfb
 
 script:
 - npm install
 - npm build
+- nohup Xvfb :66 -ac &
+- export DISPLAY=:66
 - npm test
 
 notifications:
