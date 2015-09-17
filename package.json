@@ -1,0 +1,36 @@
+{
+  "name": "chatty",
+  "version": "1.0.0",
+  "description": "Homework assignment for the Software Architectures course at BUTE",
+  "main": "index.js",
+  "scripts": {
+    "build": "gulp build",
+    "test": "gulp test-unit && ./scripts/install_selenium.sh && gulp test-e2e",
+    "start": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GD-SoftArch-2015/main-2015.git"
+  },
+  "keywords": [
+    "chat",
+    "chatty",
+    "BUTE"
+  ],
+  "author": "Midiparse, ggergo91",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GD-SoftArch-2015/main-2015/issues"
+  },
+  "homepage": "https://github.com/GD-SoftArch-2015/main-2015#readme",
+  "dependencies": {
+    "express": "^4.13.3"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "gulp": "^3.9.0",
+    "gulp-mocha": "^2.1.3",
+    "gulp-nightwatch": "^0.2.4",
+    "nightwatch": "^0.8.3"
+  }
+}

@@ -1,0 +1,6 @@
+node_modules
+reports
+.bin
+.tmp
+*.log
+*.swp

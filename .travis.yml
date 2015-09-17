@@ -1,2 +1,12 @@
+addons:
+  apt:
+    packages:
+    - curl
+
+script:
+- npm install
+- npm build
+- npm test
+
 notifications:
   slack: gdsa2015:kNg7P3o0KbDnPEJL1Q5tnd6b
