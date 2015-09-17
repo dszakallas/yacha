@@ -6,7 +6,7 @@
   "scripts": {
     "build": "gulp build",
     "test": "gulp test-unit && ./scripts/install_selenium.sh && gulp test-e2e",
-    "start": "node index"
+    "start": "node index ${PORT}"
   },
   "repository": {
     "type": "git",
