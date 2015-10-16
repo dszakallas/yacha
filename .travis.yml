@@ -1,20 +1,4 @@
-addons:
-  apt:
-    packages:
-    - curl
-    - xvfb
-script:
-- npm install
-- npm build
-- nohup Xvfb :66 -ac &
-- export DISPLAY=:66
-- npm test
-
-notifications:
-  slack: gdsa2015:kNg7P3o0KbDnPEJL1Q5tnd6b
-
-deploy:
-  app: main-2015
-  provider: heroku
-  api_key:
-    secure: nGpXaNAXeg9Z1z12iyLOMjGEdAy/6+Gk6xRw6Yc5wqhUTlk6vBBDV5ujD9zv/o/JR+kpp76j750D8u3TsmHzpxaa8q6UZzwhPYo4vvyWMss/weJCETWlNKM9ViXxZrMEw0/txXB1OKTsyCyPfbVt4td9fxjU6F3pRXxqoqQGThiWN7uYWos4jCyH1y3tiLWogsssXoeXEYbZrK0whJvhXihY7OzYCV95fCLNlMgyy65YWwoAxcUCzEOcc7zJI5+MmYph2eStuiecRgDwfblECiwRVFKWSMZW4ER2vGP/gU2cF1K0c+XwJ3UQl+Btlk3WQeKNl0HQnw/Vv9MNR0hot8GblvDRb1M40pCmW94KK6Oxa7qLlXwdWPOomONgCcuOvC7QrJ1fUMIVzJPbw3F9TC55dGn16SN6q2Lg8ZGS6vwwm6zBMZ8JR1z06epPusxn74sgdjDIYicXU+cB1VtIWhOE2AeR4UFx4Ts24NqVXd8f+h1To+BdyFj7EZp5gXCRC3gIQ2i5ryVaenbSNtzpofivdQmoABYTe7MG/CtTdVoMbPqSQ7Xiwxa95MGbK7VAJ3dxpkUYzenaa6q9uUtiRa4eb12RRKx0O8Ja+lGqVeEI1Gt4aG62v8CWnIa8rteHYknjv+iHBXR32PBGdjuYhdHpgyA3wyzo/eqb+6qCw2Q=
+sudo: false
+language: node_js
+node_js:
+  - '4.1'
