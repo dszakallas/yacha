@@ -16,12 +16,12 @@ server.use(express.static(path.join(__dirname, 'public')));
 //
 // Register API middleware
 // -----------------------------------------------------------------------------
-server.use('/api/content', require('./api/content'));
+server.use('/api', require('./api/content'));
 
 //
 // Register server-side rendering middleware
 // -----------------------------------------------------------------------------
-server.get('*', async (req, res, next) => {
+/*server.get('*', async (req, res, next) => {
   try {
     let statusCode = 200;
     const data = { title: '', description: '', css: '', body: '' };
@@ -43,6 +43,12 @@ server.get('*', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});*/
+
+server.get('/', async (req,res) => {
+  console.log("abc");
+  res.sendFile(__dirname + "/public/robots.txt"); //TODO : concrete path
+
 });
 
 //
