@@ -5,12 +5,16 @@ import path from 'path';
 import express from 'express';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
-import Router from './routes';
+
 import Html from './components/Html';
 
 const server = global.server = express();
 
 server.set('port', (process.env.PORT || 5000));
+
+//
+// Attach prerendered static files
+//
 server.use(express.static(path.join(__dirname, 'public')));
 
 //
@@ -18,37 +22,9 @@ server.use(express.static(path.join(__dirname, 'public')));
 // -----------------------------------------------------------------------------
 server.use('/api', require('./api/content'));
 
-//
-// Register server-side rendering middleware
-// -----------------------------------------------------------------------------
-/*server.get('*', async (req, res, next) => {
-  try {
-    let statusCode = 200;
-    const data = { title: '', description: '', css: '', body: '' };
-    const css = [];
-    const context = {
-      onInsertCss: value => css.push(value),
-      onSetTitle: value => data.title = value,
-      onSetMeta: (key, value) => data[key] = value,
-      onPageNotFound: () => statusCode = 404,
-    };
-
-    await Router.dispatch({ path: req.path, context }, (state, component) => {
-      data.body = ReactDOM.renderToString(component);
-      data.css = css.join('');
-    });
-
-    const html = ReactDOM.renderToStaticMarkup(<Html {...data} />);
-    res.status(statusCode).send('<!doctype html>\n' + html);
-  } catch (err) {
-    next(err);
-  }
-});*/
-
-server.get('/', async (req,res) => {
-  console.log("abc");
-  res.sendFile(__dirname + "/public/robots.txt"); //TODO : concrete path
-
+server.get('*', async (req,res,next) => {
+  const html = ReactDOM.renderToStaticMarkup(<Html />);
+  res.send('<!doctype html>\n' + html);
 });
 
 //

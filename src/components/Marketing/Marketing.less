@@ -1,0 +1,29 @@
+@import "../common";
+
+@media (max-width: @screen-md-max) {
+  .marketing-big {
+    display: none;
+  }
+}
+
+@media (min-width: @screen-md-max) {
+  .marketing-small {
+    display: none;
+  }
+}
+
+.marketing .carousel-caption h1 {
+  background-color: black;
+  border-radius: 10px;
+  opacity: 0.8;
+}
+
+/* Main marketing message and sign up button */
+.marketing .jumbotron {
+  text-align: center;
+  border-bottom: 1px solid #e5e5e5;
+  .btn {
+    font-size: 21px;
+    padding: 14px 24px;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Marketing",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./Marketing.js"
+}
