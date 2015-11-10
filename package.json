@@ -79,7 +79,7 @@
     "lint": "eslint src tools && jscs src tools",
     "csslint": "csscomb src/components --lint --verbose",
     "csscomb": "csscomb src/components --verbose",
-    "test": "eslint src && jest",
+    "test": "",
     "clean": "babel-node --eval \"require('./tools/clean')().catch(err => console.error(err.stack))\"",
     "copy": "babel-node --eval \"require('./tools/copy')().catch(err => console.error(err.stack))\"",
     "bundle": "babel-node --eval \"require('./tools/bundle')().catch(err => console.error(err.stack))\"",
