@@ -5,6 +5,12 @@ import { Router } from 'express';
 import jade from 'jade';
 import fm from 'front-matter';
 import fs from '../utils/fs';
+import redis from 'redis';
+import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
+import url from 'url';
+
+
 
 // A folder with Jade/Markdown/HTML content pages
 const CONTENT_DIR = join(__dirname, './content');
@@ -17,52 +23,158 @@ const parseJade = (path, jadeContent) => {
 };
 
 const router = new Router();
+router.use(cookieParser());
+let client = redis.createClient();
+let UserId = 'undef';
 
-/*router.get('/', async (req, res, next) => {
-  try {
-    const path = req.query.path;
+if (process.env.REDISTOGO_URL) {
+  let rtg   = url.parse(process.env.REDISTOGO_URL);
+  let client = redis.createClient(rtg.port, rtg.hostname);
+} else {
+  let client = redis.createClient();
+}
 
-    if (!path || path === 'undefined') {
-      res.status(400).send({error: `The 'path' query parameter cannot be empty.`});
-      return;
-    }
+function checkAuthentication (req,res) {
+    client.select(0);
+    let randNum = req.cookies.AuthNumber;
+    client.keys('*', function (err, keys) {
+      if (err) return console.log(err);
 
-    let fileName = join(CONTENT_DIR, (path === '/' ? '/index' : path) + '.jade');
-    if (!await fs.exists(fileName)) {
-      fileName = join(CONTENT_DIR, path + '/index.jade');
-    }
+      for(var i = 0, len = keys.length; i < len; i++) {
+          let email = keys[i];
+          client.get(email, function(err, reply) {
+          if (err){
+            res.sendStatus(500);
+            return 1;
+          }
+          else{
+            let userdatastring=reply;
+            let userdata=JSON.parse(userdatastring);
+            
+            if (userdata.AuthNumber === randNum){
+              this.UserId=email;
+              return 0;
+            }
+          }
+          
+        });
+      }
+    }); 
+    //proba miatt fix felh. nev.
+    UserId = 'ggergo91@gmail.com';
+    return 0;
+}
 
-    if (!await fs.exists(fileName)) {
-      res.status(404).send({error: `The page '${path}' is not found.`});
-    } else {
-      const source = await fs.readFile(fileName, { encoding: 'utf8' });
-      const content = parseJade(path, source);
-      res.status(200).send(content);
-    }
-  } catch (err) {
-    next(err);
-  }
-});*/
 
+client.on('connect', () => {
+    console.log('REDIS connected');
+});
 
 router.post('/login', async (req,res) => {
-  console.log("Login POSt");
+  if (checkAuthentication(req,res) === 1)
+    return;
+  let email = req.query.email;
+  let pw1 = req.query.password;
+  client.select(0);
+
+  client.exists(email, (err, reply) => {
+    if (reply === 1) {
+        let pwhash = crypto.createHash('md5').update(pw1).digest('hex');
+        client.get(email, function(err, reply) {
+          if (err){
+            res.sendStatus(500);
+          }
+          else{
+            let userdatastring=reply;
+            let userdata=JSON.parse(userdatastring);
+            
+            if (userdata.Password === pwhash){
+              console.log('Bejelentkezve');
+              let authNumber = Math.random()*65536;
+              userdata.AuthNumber=authNumber;
+              let userstring = JSON.stringify(userdata);
+              console.log(userstring);
+              client.del(email);
+              client.set(email,userstring);
+              res.cookie('AuthNumber', authNumber).send();
+            }
+          }
+          
+        });
+        
+        
+    } else {
+        res.sendStatus(400);
+    }
+}); 
 }); 
 
 
 router.post('/register', async (req,res) => {
-  console.log("Register POST");
-}); 
+  let nickname = req.query.nickname;
+  let email = req.query.email;
+  let pw1 = req.query.password;
+  client.select(0);
+
+  client.exists(email, (err, reply) => {
+    if (reply === 1) {
+        console.log('exists');
+        res.sendStatus(400);
+    } else {
+        let pwhash = crypto.createHash('md5').update(pw1).digest('hex');
+        let newuser = { "Email" : Email, "NickName" : NickName, "Password" : pwhash };
+        let newuserstring = JSON.stringify(newuser);
+        console.log(newuserstring);
+        client.set(email,newuserstring);
+        res.sendStatus(200);
+    }
+  }); 
+});
 
 router.get('/user', async (req,res) => {
-  console.log("User GET");
+  if (checkAuthentication(req,res) === 1)
+    return;
+
+  client.select(0);
+
+  client.get(UserId, function(err, reply) {
+      if (err){
+        res.sendStatus(500);
+      }
+      else{
+        let userdata=JSON.parse(reply);
+        let publicParams = {'NickName' : userdata.NickName, 'Email' : userdata.Email };
+        let publicUserString = JSON.stringify(publicParams);
+        res.send(publicUserString);
+      }
+          
+  });
+  console.log('User GET');
 }); 
 
 router.post('/user', async (req,res) => {
-  console.log("User POST");
+  if (checkAuthentication(req,res) === 1)
+    return;
+
+  // ne lehessen email-t valtoztani, mert akkor mindenutt modositani kell
+  let email = UserId;
+  let nickname = req.query.nickname;
+  let pw1 = req.query.password;
+  client.select(0);
+  client.del(email);
+  let pwhash = crypto.createHash('md5').update(pw1).digest('hex');
+  let newuser = { "Email" : Email, "NickName" : NickName, "Password" : pwhash };
+  let newuserstring = JSON.stringify(newuser);
+  console.log(newuserstring);
+  client.set(email,newuserstring);
+  res.sendStatus(200);
 });
 
 router.delete('/user', async (req,res) => {
+  if (checkAuthentication(req,res) === 1)
+    return;
+
+  client.del(UserId);
   console.log("User DELETE");
 });
 
