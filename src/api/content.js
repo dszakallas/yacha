@@ -34,7 +34,7 @@ if (process.env.REDISTOGO_URL) {
   let client = redis.createClient();
 }
 
-function checkAuthentication (req,res) {
+function checkAuthentication (req, res) {
     client.select(0);
     let randNum = req.cookies.AuthNumber;
     client.keys('*', function (err, keys) {
@@ -174,21 +174,70 @@ router.delete('/user', async (req,res) => {
   if (checkAuthentication(req,res) === 1)
     return;
 
+  client.select(0);
   client.del(UserId);
   console.log("User DELETE");
 });
 
 router.get('/user/rooms', async (req,res) => {
-  console.log("User/rooms GET");
+  if (checkAuthentication(req,res) === 1)
+    return;
+  client.select(1);
+
+  client.keys('*', function (err, keys) {
+      if (err) return console.log(err);
+      let rooms =[];
+      for(var i = 0, len = keys.length; i < len; i++) {
+          let roomid = keys[i];
+          client.get(roomid, function(err, reply) {
+          if (err){
+            res.sendStatus(500);
+            return 1;
+          }
+          else{
+            let roomdatastring=reply;
+            let roomdata = JSON.parse(roomdatastring);
+            let members = roomdata.Members;
+            
+            for (var i = 0; i < members.length; i++) {
+              if (members[i] === UserId) {
+                rooms.push(roomid);
+              }
+            }
+
+          }
+        });
+      
+    } 
+    let foundrooms = { "Rooms" : rooms};
+    let foundroomsstr = JSON.stringify(foundrooms);
+    res.send(foundroomsstr);    
+  });
+  console.log('User/rooms GET');
 }); 
 
 router.get('/user/rooms/:roomid', async (req,res) => {
+  if (checkAuthentication(req,res) === 1)
+    return;
+
+  client.select(1);
   var roomid=req.params.roomid;
-  console.log(roomid);
+  client.get(roomid, function(err, reply) {
+          if (err){
+            res.sendStatus(400);
+          }
+          else{
+            let roomdatastring=reply;
+            res.send(roomdatastring);
+          }
+  });
+  console.log('get rooms/roomid');
 }); 
 
 router.delete('/user/rooms/:roomid', async (req,res) => {
-  console.log("User/rooms/:roomid DELETE");
+  if (checkAuthentication(req,res) === 1)
+    return;
+  console.log('User/rooms/:roomid DELETE');
 }); 
 
 router.post('/user/rooms/:roomid/join', async (req,res) => {
