@@ -27,12 +27,12 @@ router.use(cookieParser());
 let client = redis.createClient();
 let UserId = 'undef';
 
-/*if (process.env.REDISTOGO_URL) {
+if (process.env.REDISTOGO_URL) {
   let rtg   = url.parse(process.env.REDISTOGO_URL);
   let client = redis.createClient(rtg.port, rtg.hostname);
 } else {
   let client = redis.createClient();
-}*/
+}
 
 function checkAuthentication (req, res, cb){
     /*client.select(0);
@@ -187,11 +187,19 @@ router.get('/user/rooms',  async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
     client.keys('*',  (err, keys) => {
-        if (err) return console.log(err);
-        let rooms =[];
+        if (err) {
+          res.sendStatus(400);
+          res.end();
+          return;
+        }
+        
         for(var i = 0, len = keys.length; i < len; i++) {
             let roomid = keys[i];
-            client.get(roomid, (err, reply) => {
+            if (i===0)
+              res.write('{"Rooms": [');
+
+            let v = (i===(keys.length-1));
+            client.get(roomid, (err, reply, endres = v) => {
             if (err){
               res.sendStatus(500);
               return 1;
@@ -201,19 +209,22 @@ router.get('/user/rooms',  async (req,res) => {
               let roomdata = JSON.parse(roomdatastring);
               let members = roomdata.Members;
               if (roomdata.Private==false){
-                for (var i = 0; i < members.length; i++) {
-                  if (members[i] === UserId) {
-                    rooms.push(roomid);
-                  } 
-                }
+                for (var j = 0; j < members.length; j++) {
+                  if (members[j] === UserId) {
+                        res.write('"' + roomid + '"');
+                        if (endres ===false)
+                          res.write(' ,');
+                  }
+              }
+              }
+              if (endres===true){
+                    res.write('] }');
+                    res.end();
               }
             }
           });
         
       } 
-      let foundrooms = { "Rooms" : rooms};
-      let foundroomsstr = JSON.stringify(foundrooms);
-      res.send(foundroomsstr);    
     });
     console.log('User/rooms GET');
   });
@@ -346,36 +357,41 @@ router.get('/user/admin/rooms', async (req,res) => {
 
     client.keys('*',  (err, keys) => {
         if (err) return console.log("Nincs ilyen szoba");
-        let rooms =[];
+        
         for(var i = 0, len = keys.length; i < len; i++) {
             let roomid = keys[i];
             console.log(keys[i]);
-            client.get(roomid, (err, reply) => {
+            if (i===0)
+              res.write('{"Rooms": [');
+
+            let v = (i===(keys.length-1));
+            client.get(roomid, (err, reply, endres = v) => {
               if (err){
                 res.sendStatus(500);
-                console.log("Nincs ilyen szobak");
                 return;
              }
             else{
                 let roomdatastring=reply;
-                console.log(roomdatastring);
                 let roomdata = JSON.parse(roomdatastring);
                 let admins = roomdata.Admins;
                 if (roomdata.Private===false){
                   for (var j = 0; j < admins.length; j++) {
-                    console.log("benne");
                     if (admins[j] === UserId) {
-                      rooms.push(roomid);
-                      res.write(roomid + ',');
-                    } 
+                        res.write('"' + roomid + '"');
+                        if (endres ===false)
+                          res.write(' ,');
+                    
                   }
+                  }
+                }
+                if (endres===true){
+                      res.write('] }');
+                      res.end();
                 }
               }
             });
       } 
-      let foundrooms = { "Rooms" : rooms};
-      let foundroomsstr = JSON.stringify(foundrooms);
-      res.send(foundroomsstr);    
+        
     });
     console.log("user/admin/rooms GET");
   });
@@ -498,11 +514,14 @@ router.get('/users/search/:keyword', async (req,res) => {
 
         if (err) return console.log(err);
         let kw=req.params.keyword;
-        let users=[];
 
         for(var i = 0, len = keys.length; i < len; i++) {
             let email = keys[i];
-            client.get(email, function(err, reply) {
+            if (i===0)
+              res.write('{"Users": [');
+
+            let v = (i===(keys.length-1));
+            client.get(email, (err, reply, endres = v) => {
               if (err){
                 res.sendStatus(500);
                 return;
@@ -512,16 +531,21 @@ router.get('/users/search/:keyword', async (req,res) => {
                 let userdata=JSON.parse(userdatastring);
                 let name=userdata.NickName;
                 let f=name.search(kw);
-                if (f!==-1)
-                  users.push(userdata.Email);
+                if (f!==-1){
+                      res.write('"' + email + '"');
+                      if (endres ===false)
+                          res.write(' ,');
+
+                }
+                if (endres===true){
+                      res.write('] }');
+                      res.end();
+                }
               
               }
             
             });
         }
-        let us ={"Users" : users };
-        let usstring = JSON.stringify(us);
-        res.send(usstring);
       });
     console.log("users/search/:keyword GET");
   });
