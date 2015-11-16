@@ -1,5 +1,4 @@
 import React, { PropTypes, Component } from 'react';
-import { render } from 'react-dom';
 import { Router, Route, Link } from 'react-router';
 import withStyles from '../../decorators/withStyles';
 import styles from './App.less';

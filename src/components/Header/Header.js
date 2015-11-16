@@ -1,5 +1,4 @@
 import React, { PropTypes, Component } from 'react';
-import { render } from 'react-dom'
 import { Router, Route, Link } from 'react-router'
 
 import withStyles from '../../decorators/withStyles';
@@ -12,8 +11,8 @@ class Header extends Component {
     return (
       <div className="header">
         <ul className="nav nav-pills pull-right">
-          <li><Link to={`/login`}>Sign in</Link></li>
-          <li><Link to={`/signup`}>Sign up</Link></li>
+          <li><Link to={`/gate`}>Sign in</Link></li>
+          <li><Link to={`/gate/signup`}>Sign up</Link></li>
           <li><a href="#">Contact</a></li>
         </ul>
         <h3 className="text-muted">Yacha</h3>

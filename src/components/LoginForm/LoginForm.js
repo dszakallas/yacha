@@ -19,7 +19,6 @@ class LoginForm extends Component {
     };
   }
 
-
   submit(e) {
     e.preventDefault();
     if(!this.state.loginName || !this.state.password) {
@@ -33,43 +32,40 @@ class LoginForm extends Component {
   render() {
 
     return (
-      <div className="col-xs-12 col-sm-6 col-md-4">
-        <form className="login" onSubmit={this.submit.bind(this)}>
-          { this.state.error ? <Alert bsStyle="danger" >{this.state.error}</Alert> : '' }
-          <div className={ this.state.error ? "has-error" : null }>
-            <div className="form-group">
-              <label htmlFor="login" className="sr-only">Login name or email</label>
-              <input type="text"
-                className="form-control"
-                id="login"
-                placeholder="Username or email"
-                value={this.state.loginName}
-                onChange={(e) => this.setState({ loginName: e.target.value }) } />
-            </div>
-            <div className="form-group">
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input type="password"
-                className="form-control"
-                id="password"
-                placeholder="Password"
-                value={this.state.password}
-                onChange={(e) => this.setState({ password: e.target.value})} />
-            </div>
+      <form className="login" onSubmit={this.submit.bind(this)}>
+        { this.state.error ? <Alert bsStyle="danger" >{this.state.error}</Alert> : '' }
+        <div className={ this.state.error ? "has-error" : null }>
+          <div className="form-group">
+            <label htmlFor="login" className="sr-only">Login name or email</label>
+            <input type="text"
+              className="form-control"
+              id="login"
+              placeholder="Username or email"
+              value={this.state.loginName}
+              onChange={(e) => this.setState({ loginName: e.target.value }) } />
           </div>
-          <div className="checkbox">
-            <label>
-              <input type="checkbox"
-                id="remember"
-                value={this.state.remember}
-                onChange={(e) => this.setState({ remember: e.target.value}) }  />
-                Remember me
-            </label>
-            <a href="...">Forgot your password?</a>
+          <div className="form-group">
+            <label htmlFor="password" className="sr-only">Password</label>
+            <input type="password"
+              className="form-control"
+              id="password"
+              placeholder="Password"
+              value={this.state.password}
+              onChange={(e) => this.setState({ password: e.target.value})} />
           </div>
-          <button type="submit" className="btn btn-default">Sign in</button>
-        </form>
-      </div>
-
+        </div>
+        <div className="checkbox">
+          <label>
+            <input type="checkbox"
+              id="remember"
+              value={this.state.remember}
+              onChange={(e) => this.setState({ remember: e.target.value}) }  />
+              Remember me
+          </label>
+          <Link href={this.}>Forgot your password?</Link>
+        </div>
+        <button type="submit" className="btn btn-default">Sign in</button>
+      </form>
     );
   }
 }
