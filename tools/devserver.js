@@ -18,8 +18,10 @@ const bundler = webpack(webpackConfig);
  */
 export default task('start', async () => {
   await require('./build')();
+  await require('./redis').up();
   await require('./serve')();
-
+  
+  
   browserSync({
     proxy: {
 
