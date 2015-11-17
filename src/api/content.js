@@ -42,18 +42,20 @@ function checkAuthentication (req, res, cb){
     redisClient.select(0);
     let randNum = req.cookies.AuthNumber;
     UserId = 'undef';
+    console.log(randNum);
     redisClient.keys('*', function(err, keys) {
           async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
-              let userdata = JSON.parse(value);
-              if (userdata.AuthNumber === randNum){
+              let userData = JSON.parse(value);
+              if (userData.AuthNumber === randNum){
                 UserId=key;
                 console.log("Autentikalhato");
               }
               callback(err);
             });
           }, function() {
-              if (UserId !== 'undef'){
+              if (UserId != 'undef'){
+                console.log('Autentikalva');
                 cb(req,res);
               }
               else{
@@ -88,35 +90,20 @@ router.post('/login', async (req,res) => {
             res.sendStatus(401);
           }
           else{
-            let userdatastring=reply;
-            let userdata=JSON.parse(userdatastring);
+            let userDatastring=reply;
+            let userData=JSON.parse(userDatastring);
             
-            if (userdata.Password === pwHash){
-              console.log('Bejelentkezve');
-              let authNumber = 0;
-              
-               redisClient.keys('*', function(err, keys) {
-                    async.each(keys, function(key, callback) {
-                      redisClient.get(key, function(err, value) {
-                        let userData = JSON.parse(value);
-                        if (userData.AuthNumber){
-                          authNumber = authNumber + userData.AuthNumber;
-                        }
-                        callback(err);
-                      });
-                    }, function() {
-                        authNumber = authNumber + Math.random()*100;
-                        userdata.AuthNumber=authNumber;
-                        let userString = JSON.stringify(userdata);
-                        console.log(userString);
-                        redisClient.del(email);
-                        redisClient.set(email,userString);
-                        console.log('bejelentkezved');
-                        res.cookie('AuthNumber', authNumber);
-                        let resData = {"username" : email, "nickname" : userdata.NickName}; 
-                        res.status(200).send(resData); 
-                    });
-              });
+            if (userData.Password === pwHash){
+              let authNumber = crypto.randomBytes(64).toString('hex');
+              userData.AuthNumber=authNumber;
+              let userString = JSON.stringify(userData);
+              console.log(userString);
+              redisClient.del(email);
+              redisClient.set(email,userString);
+              res.cookie('AuthNumber', authNumber);
+              let resData = {"username" : email, "nickname" : userData.NickName}; 
+              res.status(200).send(resData); 
+         
               
             }
             else {
@@ -154,8 +141,8 @@ router.post('/register', async (req,res) => {
         redisClient.keys('*', function(err, keys) {
           async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
-              let userdata = JSON.parse(value);
-              if (userdata.NickName === nickname){
+              let userData = JSON.parse(value);
+              if (userData.NickName === nickname){
                 validNickName=false;
                 console.log("invalid");
               }
@@ -187,11 +174,11 @@ router.get('/user', async (req,res) => {
 
     redisClient.get(UserId, (err, reply) => {
         if (err){
-          res.sendStatus(500);
+          res.sendStatus(404);
         }
         else{
-          let userdata=JSON.parse(reply);
-          let publicParams = {"nickname" : userdata.NickName, "email" : userdata.Email };
+          let userData=JSON.parse(reply);
+          let publicParams = {"nickname" : userData.NickName, "email" : userData.Email };
           res.send(publicParams);
         }
             
@@ -201,21 +188,35 @@ router.get('/user', async (req,res) => {
   });
 }); 
 
-router.post('/user', async (req,res) => {
+router.put('/user', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
-    // ne lehessen email-t valtoztani, mert akkor mindenutt modositani kell
-    let email = UserId;
+    // csak nicknkevet és password-ot is lehet, ahogy wikin le van írva
     let nickname = req.body.nickname;
-    let pw1 = req.body.password;
+    let password = req.body.password;
+    if (!(nickname || password)){
+      res.sendStatus(400);
+      return;
+    }
     redisClient.select(0);
-    redisClient.del(email);
-    let pwhash = crypto.createHash('md5').update(pw1).digest('hex');
-    let newuser = { "Email" : Email, "NickName" : NickName, "Password" : pwhash };
-    let newuserstring = JSON.stringify(newuser);
-    console.log(newuserstring);
-    redisClient.set(email,newuserstring);
-    res.sendStatus(200);
+    redisClient.get(UserId, (err, reply) => {
+        if (err){
+          res.sendStatus(404);
+        }
+        else{
+          let userData=JSON.parse(reply);
+          if (nickname)
+            userData.NickName = nickname;
+          if (password)
+            userData.Password = crypto.createHash('md5').update(password).digest('hex');
+          let newUserString = JSON.stringify(userData);
+          redisClient.set(UserId,newUserString);
+          let publicParams = {"nickname" : nickname, "password" : password};
+          res.status(200).send(publicParams);
+        }
+            
+    });
+
   });
 });
 
@@ -224,52 +225,49 @@ router.delete('/user', async (req,res) => {
 
     redisClient.select(0);
     redisClient.del(UserId);
+    res.sendStatus(204);
     console.log("User DELETE");
   });
 });
 
 router.get('/user/rooms',  async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
-
-    redisClient.keys('*',  (err, keys) => {
-        if (err) {
-          res.sendStatus(400);
-          res.end();
-          return;
-        }
-        
-        for(var i = 0, len = keys.length; i < len; i++) {
-            let roomid = keys[i];
-            if (i===0)
-              res.write('{"Rooms": [');
-
-            let v = (i===(keys.length-1));
-            redisClient.get(roomid, (err, reply, endres = v) => {
-            if (err){
-              res.sendStatus(500);
-              return 1;
-            }
-            else{
-              let roomdatastring=reply;
-              let roomdata = JSON.parse(roomdatastring);
-              let members = roomdata.Members;
-
-              for (var j = 0; j < members.length; j++) {
-                  if (members[j] === UserId) {
-                        res.write('"' + roomid + '"');
-                        if (endres ===false)
-                          res.write(' ,');
-                  }
+    redisClient.select(1);
+    let rooms = [];
+    redisClient.keys('*', function(err, keys) {
+          async.each(keys, function(key, callback) {
+            redisClient.get(key, function(err, value) {
+              if (err){
+                res.sendStatus(404);
+                return ;
               }
-              if (endres===true){
-                    res.write('] }');
-                    res.end();
+              else{
+                let roomDataString=value;
+                let roomData = JSON.parse(roomDataString);
+                let members = roomData.Members;
+
+                for (var j = 0; j < members.length; j++) {
+                    if (members[j] === UserId) {
+                        let resData = {"id" : key, "name" : roomData.Name};
+                        
+                        for (var k=0; k<roomData.Admins.length; k++){
+                          if (roomData.Admins[k] === UserId)
+                          {
+                            resData.admin = true;
+                          }
+
+                        }
+                        rooms.push(resData);
+                    }
+                }
               }
-            }
+            
+            callback(err);
+            });
+          }, function() {
+              res.status(200).send(rooms);
           });
-        
-      } 
-    });
+        });
     console.log('User/rooms GET');
   });
 }); 
@@ -281,11 +279,24 @@ router.get('/user/rooms/:roomid', async (req,res) => {
     var roomid=req.params.roomid;
     redisClient.get(roomid, (err, reply) => {
             if (err){
-              res.sendStatus(400);
+              res.sendStatus(404);
             }
             else{
-              let roomdatastring=reply;
-              res.send(roomdatastring);
+              let roomData = JSON.parse(reply);
+              let member=false;
+              for (var j=0; j<roomData.Members.length; j++){
+                if (roomData.Members[j] === UserId)
+                  member = true;
+              }
+              if (member){
+                let rData = {"name" : roomData.Name, "id" : roomData.Id,  "members" : roomData.Members, "admins" :roomData.Admins, "private" : roomData.Private};
+                res.status(200).send(rData);
+              }
+              else{
+                res.sendStatus(204);
+
+              }
+
             }
     });
     console.log('get rooms/roomid');
@@ -298,22 +309,38 @@ router.delete('/user/rooms/:roomid', async (req,res) => {
     var roomid=req.params.roomid;
     redisClient.get(roomid, (err, reply) => {
             if (err){
-              res.sendStatus(400);
+              res.sendStatus(404);
             }
             else{
-              let roomdatastring = reply;
-              let roomdata = JSON.parse(roomdatastring)
-              let members = roomdata.Members;
+              let roomDataString = reply;
+              let roomData = JSON.parse(roomDataString)
+              let members = roomData.Members;
               let nmembers = [];
+              let nAdmins = [];
+              for (var i = 0; i < roomData.Admins.length; i++) {
+                  if (roomData.Admins[i] != UserId) {
+                    nmembers.push(members[i]);
+                  } 
+                  else{
+                    if (roomData.Admins.length === 1){
+                      let rescode = {"reason" : 10};
+                      res.status(400).send(rescode);
+                      return;
+                    }
+                  }
+              }
+              roomData.Admins = nAdmins;
+              
 
               for (var i = 0; i < members.length; i++) {
-                  if (members[i] !== UserId) {
+                  if (members[i] != UserId) {
                     nmembers.push(members[i]);
                   } 
               }
-              roomdata.Members = nmembers;
-              roomdatastring = JSON.stringify(roomdata);
-              redisClient.set(rooomid,roomdatastring);
+              roomData.Members = nmembers;
+              roomDataString = JSON.stringify(roomData);
+              redisClient.set(roomid,roomDataString);
+              res.sendStatus(204);
             }
     });
     console.log('User/rooms/:roomid DELETE');
@@ -323,20 +350,27 @@ router.delete('/user/rooms/:roomid', async (req,res) => {
 router.post('/user/rooms/:roomid/join', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let roomid=req.params.roomid;
+    console.log(roomid);
     redisClient.select(1);
     redisClient.get(roomid, (err, reply) => {
             if (err){
-              res.sendStatus(400);
+              res.sendStatus(404);
             }
             else{
-              let roomdatastring = reply;
-              let roomdata = JSON.parse(roomdatastring)
-              let members = roomdata.Members;
+              let roomData = JSON.parse(reply);
+              let members = roomData.Members;
+              for (var i = 0; i < members.length; i++) {
+                  if (members[i] === UserId) {
+                    let resCode = {"reason" : 11};
+                    res.status(400).send(resCode);
+                    return;
+                  } 
+              }
               members.push(UserId);
-              roomdata.Members = members;
-              roomdatastring = JSON.stringify(roomdata);
-              redisClient.set(rooomid,roomdatastring);
-              res.sendStatus(200);
+              roomData.Members = members;
+              let roomDataString = JSON.stringify(roomData);
+              redisClient.set(roomid,roomDataString);
+              res.sendStatus(204);
             }
     });
     console.log("User/rooms/:roomid/join POST");
@@ -352,8 +386,8 @@ router.get('/user/rooms/:roomid/messages', async (req,res) => {
               res.sendStatus(400);
             }
             else{
-              let roomdatastring = reply;
-              let roomdata = JSON.parse(roomdatastring)
+              let roomDataString = reply;
+              let roomdata = JSON.parse(roomDataString)
               let messages = {"Messages" : roomdata.Messages};
               let msgstr = JSON.stringify(messages);
               res.send(msgstr);
@@ -373,8 +407,8 @@ router.post('/user/rooms/:roomid/messages', async (req,res) => {
               res.sendStatus(400);
             }
             else{
-              let roomdatastring = reply;
-              let roomdata = JSON.parse(roomdatastring)
+              let roomDataString = reply;
+              let roomdata = JSON.parse(roomDataString)
               let messages = roomdata.Messages;
               let currentdate = new Date(); 
               let datetime = currentdate.getDate() + "/"
@@ -387,8 +421,8 @@ router.post('/user/rooms/:roomid/messages', async (req,res) => {
               let nmsg = {"Date" : datetime, "User" : UserId, "Message" : msg};
               messages.push(nmsg);
               roomdata.Messages=messages;
-              roomdatastring = JSON.stringify(roomdata);
-              redisClient.set(roomid,roomdatastring);
+              roomDataString = JSON.stringify(roomdata);
+              redisClient.set(roomid,roomDataString);
             }
     });
     console.log("User/rooms/:roomid/messages POST");
@@ -415,8 +449,8 @@ router.get('/user/admin/rooms', async (req,res) => {
                 return;
              }
             else{
-                let roomdatastring=reply;
-                let roomdata = JSON.parse(roomdatastring);
+                let roomDataString=reply;
+                let roomdata = JSON.parse(roomDataString);
                 let admins = roomdata.Admins;
                 if (roomdata.Private===false){
                   for (var j = 0; j < admins.length; j++) {
@@ -483,8 +517,8 @@ router.get('/user/admin/rooms/:roomid', async (req,res) => {
               res.sendStatus(400);
             }
             else{
-              let roomdatastring=reply;
-              res.send(roomdatastring);
+              let roomDataString=reply;
+              res.send(roomDataString);
             }
     });
     console.log("user/admin/rooms/roomid GET");
@@ -501,12 +535,12 @@ router.put('/user/admin/rooms/:roomid', async (req,res) => {
               res.sendStatus(400);
             }
             else{
-              let roomdatastring = reply;
-              let roomdata = JSON.parse(roomdatastring);
+              let roomDataString = reply;
+              let roomdata = JSON.parse(roomDataString);
               let roomname = req.query.name;
               roomdata.Name = roomname;
-              roomdatastring = JSON.stringify(roomdata);
-              redisClient.set(roomid,roomdatastring);
+              roomDataString = JSON.stringify(roomdata);
+              redisClient.set(roomid,roomDataString);
             }
     });
     console.log("user/admin/rooms/roomid PUT");
@@ -537,8 +571,8 @@ router.get('/users/:userid', async (req,res) => {
           res.sendStatus(500);
         }
         else{
-          let userdata=JSON.parse(reply);
-          let publicParams = {"NickName" : userdata.NickName, "Email" : userdata.Email };
+          let userData=JSON.parse(reply);
+          let publicParams = {"NickName" : userData.NickName, "Email" : userData.Email };
           let publicUserString = JSON.stringify(publicParams);
           res.send(publicUserString);
         }
@@ -571,9 +605,9 @@ router.get('/users/search/:keyword', async (req,res) => {
                 return;
               }
               else{
-                let userdatastring=reply;
-                let userdata=JSON.parse(userdatastring);
-                let name=userdata.NickName;
+                let userDatastring=reply;
+                let userData=JSON.parse(userDatastring);
+                let name=userData.NickName;
                 let f=name.search(kw);
                 if (f!==-1){
                       res.write('"' + email + '"');
