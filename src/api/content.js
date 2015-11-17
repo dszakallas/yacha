@@ -42,32 +42,24 @@ function checkAuthentication (req, res, cb){
     redisClient.select(0);
     let randNum = req.cookies.AuthNumber;
     UserId = 'undef';
-    redisClient.keys('*', function (err, keys) {
-      if (err) return console.log(err);
-      else{
-        for(var i = 0, len = keys.length; i < len; i++) {
-            let email = keys[i];
-            redisClient.get(email, (err, reply) => {
-            if (err){
-              res.sendStatus(500);
-              return;
-            }
-            else{
-              let userdatastring=reply;
-              let userdata=JSON.parse(userdatastring);
-              console.log(userdatastring);
-              
+    redisClient.keys('*', function(err, keys) {
+          async.each(keys, function(key, callback) {
+            redisClient.get(key, function(err, value) {
+              let userdata = JSON.parse(value);
               if (userdata.AuthNumber === randNum){
-                  UserId=email;
-                  cb(req,res);
+                UserId=key;
+                console.log("Autentikalhato");
               }
-                  //proba miatt fix felh. nev.
-              
-            }
-            
+              callback(err);
+            });
+          }, function() {
+              if (UserId !== 'undef'){
+                cb(req,res);
+              }
+              else{
+                res.sendStatus(401);
+              }
           });
-        }
-      }
     });
     console.log('aut');
     
@@ -82,8 +74,12 @@ redisClient.on('connect', () => {
 router.post('/login', async (req,res) => {
   let email = req.body.username;
   let pw1 = req.body.password;
-  redisClient.select(0);
+  if (!(email && pw1)){
+    res.sendStatus(401);
+    return;
+  }
 
+  redisClient.select(0);
   redisClient.exists(email, (err, reply) => {
     if (reply === 1) {
         let pwHash = crypto.createHash('md5').update(pw1).digest('hex');
@@ -97,24 +93,41 @@ router.post('/login', async (req,res) => {
             
             if (userdata.Password === pwHash){
               console.log('Bejelentkezve');
-              let authNumber = 0;Math.random()*65536;
-              userdata.AuthNumber=authNumber;
-              let userstring = JSON.stringify(userdata);
-              console.log(userstring);
-              redisClient.del(email);
-              redisClient.set(email,userstring);
-              res.cookie('AuthNumber', authNumber).send();
-              let resData = {"username" : email, "nickname" : userdata.NickName}; 
-              res.status(200).send(resData);
+              let authNumber = 0;
+              
+               redisClient.keys('*', function(err, keys) {
+                    async.each(keys, function(key, callback) {
+                      redisClient.get(key, function(err, value) {
+                        let userData = JSON.parse(value);
+                        if (userData.AuthNumber){
+                          authNumber = authNumber + userData.AuthNumber;
+                        }
+                        callback(err);
+                      });
+                    }, function() {
+                        authNumber = authNumber + Math.random()*100;
+                        userdata.AuthNumber=authNumber;
+                        let userString = JSON.stringify(userdata);
+                        console.log(userString);
+                        redisClient.del(email);
+                        redisClient.set(email,userString);
+                        console.log('bejelentkezved');
+                        res.cookie('AuthNumber', authNumber);
+                        let resData = {"username" : email, "nickname" : userdata.NickName}; 
+                        res.status(200).send(resData); 
+                    });
+              });
+              
             }
+            else {
+                  res.sendStatus(401);
+            }
+             
           }
           
         });
-        
-        
-    } else {
-        res.sendStatus(401);
     }
+         
   }); 
 }); 
 
@@ -178,9 +191,8 @@ router.get('/user', async (req,res) => {
         }
         else{
           let userdata=JSON.parse(reply);
-          let publicParams = {"NickName" : userdata.NickName, "Email" : userdata.Email };
-          let publicUserString = JSON.stringify(publicParams);
-          res.send(publicUserString);
+          let publicParams = {"nickname" : userdata.NickName, "email" : userdata.Email };
+          res.send(publicParams);
         }
             
     });
