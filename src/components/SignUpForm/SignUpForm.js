@@ -27,6 +27,8 @@ class SignUpForm extends Component {
       repasswordValue: '',
       repasswordError: "Shouldn't be empty",
 
+      submitted: false
+
     };
   }
 
@@ -129,7 +131,12 @@ class SignUpForm extends Component {
   submit(e) {
     e.preventDefault();
     if(this.submitable()) {
-      console.log("submitted");
+      //TODO
+
+
+      this.setState({ submitted: true });
+
+
     }
   }
 
@@ -142,6 +149,7 @@ class SignUpForm extends Component {
         placeholder="Nickname"
         onChange={this.nicknameChanged.bind(this)}
         onBlur={this.nicknameBlurred.bind(this)}
+        noValidate
         />
     );
   }
@@ -155,6 +163,7 @@ class SignUpForm extends Component {
         placeholder="Email"
         onChange={this.emailChanged.bind(this)}
         onBlur={this.emailBlurred.bind(this)}
+        noValidate
          />
     );
   }
@@ -168,6 +177,7 @@ class SignUpForm extends Component {
         placeholder="Password"
         onChange={this.passwordChanged.bind(this)}
         onBlur={this.passwordBlurred.bind(this)}
+        noValidate
          />
     );
   }
@@ -181,95 +191,108 @@ class SignUpForm extends Component {
         placeholder="Password again"
         onChange={this.repasswordChanged.bind(this)}
         onBlur={this.repasswordBlurred.bind(this)}
+        noValidate
          />
     );
   }
 
   render() {
     return (
-      <form className="form-horizontal" onSubmit={this.submit.bind(this)}>
-        <div className={ this.state.nicknameError && this.state.nicknameTouched ? "has-error" : null }>
-          <div className="form-group">
-            <label htmlFor="reg-username" className="col-sm-2 control-label">Nickname</label>
-            <div className="col-sm-10">
-              <OverlayTrigger
-                trigger="click" rootClose
-                placement="top"
-                overlay={
-                  <Popover id="reg-username-popover"
-                    title="Nickname">{"This is the name others will see when they interact with you. Must be at least 5 characters long."}
-                  </Popover>
-                }
-              >
-                <div>{ this.renderNicknameInput.call(this) }</div>
-              </OverlayTrigger>
-              { this.state.nicknameError && this.state.nicknameTouched ? <Alert bsStyle="danger" >{this.state.nicknameError}</Alert> : '' }
-            </div>
-          </div>
-        </div>
-        <div className={ this.state.emailError && this.state.emailTouched ? "has-error" : null }>
-          <div className="form-group">
-            <label htmlFor="reg-email" className="col-sm-2 control-label">Email</label>
-            <div className="col-sm-10">
-              <OverlayTrigger
-                trigger="click" rootClose
-                placement="top"
-                overlay={
-                  <Popover id="reg-email-popover"
-                    title="Email">{"You have to provide a valid email address. We send a confirmation email here."}
-                  </Popover>
-                }
-              >
-                <div>{ this.renderEmailInput.call(this) }</div>
-              </OverlayTrigger>
-              { this.state.emailError && this.state.emailTouched ? <Alert bsStyle="danger" >{this.state.emailError}</Alert> : '' }
-            </div>
-          </div>
-        </div>
-        <div className={ this.state.passwordError && this.state.passwordTouched ? "has-error" : null }>
-          <div className="form-group">
-            <label htmlFor="reg-password" className="col-sm-2 control-label">Password</label>
-            <div className="col-sm-10">
-              <OverlayTrigger
-                trigger="click" rootClose
-                placement="top"
-                overlay={
-                  <Popover id="reg-password-popover"
-                    title="Password">{"You have to remember this and keep it secret."}
-                  </Popover>
-                }
-              >
-                <div>{ this.renderPasswordInput.call(this) }</div>
-              </OverlayTrigger>
-              { this.state.passwordError && this.state.passwordTouched ? <Alert bsStyle="danger" >{this.state.passwordError}</Alert> : '' }
-            </div>
-          </div>
-        </div>
-        <div className={ this.state.repasswordError && this.state.repasswordTouched ? "has-error" : null }>
-          <div className="form-group">
-            <label htmlFor="reg-repassword" className="col-sm-2 control-label">Password again</label>
-            <div className="col-sm-10">
-              <OverlayTrigger
-                trigger="click" rootClose
-                placement="top"
-                overlay={
-                  <Popover id="reg-repassword-popover"
-                    title="Password confirmation">{"Enter your password once more."}
-                  </Popover>
-                }
-              >
-                <div>{ this.renderRepasswordInput.call(this) }</div>
-              </OverlayTrigger>
-              { this.state.repasswordError && this.state.repasswordTouched ? <Alert bsStyle="danger" >{this.state.repasswordError}</Alert> : '' }
-            </div>
-          </div>
-        </div>
-        <div className="form-group">
-          <div className="col-sm-offset-2 col-sm-10">
-            <button disabled={this.submitable.call(this) ? false : true} type="submit" className="btn btn-default">Sign up</button>
-          </div>
-        </div>
-      </form>
+      <div>
+        {
+          this.state.submitted
+            ?
+              <Alert bsStyle="info" >
+                <h4>Just one more step!</h4>
+                <p>You sent confirmation email to {this.state.emailValue} which contains a link. Click on that link and you are ready.</p>
+              </Alert>
+            :
+              <form className="form-horizontal" onSubmit={this.submit.bind(this)}>
+                <div className={ this.state.nicknameError && this.state.nicknameTouched ? "has-error" : null }>
+                  <div className="form-group">
+                    <label htmlFor="reg-username" className="col-sm-2 control-label">Nickname</label>
+                    <div className="col-sm-10">
+                      <OverlayTrigger
+                        trigger="click" rootClose
+                        placement="top"
+                        overlay={
+                          <Popover id="reg-username-popover"
+                            title="Nickname">{"This is the name others will see when they interact with you. Must be at least 5 characters long."}
+                          </Popover>
+                        }
+                      >
+                        <div>{ this.renderNicknameInput.call(this) }</div>
+                      </OverlayTrigger>
+                      { this.state.nicknameError && this.state.nicknameTouched ? <Alert bsStyle="danger" >{this.state.nicknameError}</Alert> : '' }
+                    </div>
+                  </div>
+                </div>
+                <div className={ this.state.emailError && this.state.emailTouched ? "has-error" : null }>
+                  <div className="form-group">
+                    <label htmlFor="reg-email" className="col-sm-2 control-label">Email</label>
+                    <div className="col-sm-10">
+                      <OverlayTrigger
+                        trigger="click" rootClose
+                        placement="top"
+                        overlay={
+                          <Popover id="reg-email-popover"
+                            title="Email">{"You have to provide a valid email address. We send a confirmation email here."}
+                          </Popover>
+                        }
+                      >
+                        <div>{ this.renderEmailInput.call(this) }</div>
+                      </OverlayTrigger>
+                      { this.state.emailError && this.state.emailTouched ? <Alert bsStyle="danger" >{this.state.emailError}</Alert> : '' }
+                    </div>
+                  </div>
+                </div>
+                <div className={ this.state.passwordError && this.state.passwordTouched ? "has-error" : null }>
+                  <div className="form-group">
+                    <label htmlFor="reg-password" className="col-sm-2 control-label">Password</label>
+                    <div className="col-sm-10">
+                      <OverlayTrigger
+                        trigger="click" rootClose
+                        placement="top"
+                        overlay={
+                          <Popover id="reg-password-popover"
+                            title="Password">{"You have to remember this and keep it secret."}
+                          </Popover>
+                        }
+                      >
+                        <div>{ this.renderPasswordInput.call(this) }</div>
+                      </OverlayTrigger>
+                      { this.state.passwordError && this.state.passwordTouched ? <Alert bsStyle="danger" >{this.state.passwordError}</Alert> : '' }
+                    </div>
+                  </div>
+                </div>
+                <div className={ this.state.repasswordError && this.state.repasswordTouched ? "has-error" : null }>
+                  <div className="form-group">
+                    <label htmlFor="reg-repassword" className="col-sm-2 control-label">Password again</label>
+                    <div className="col-sm-10">
+                      <OverlayTrigger
+                        trigger="click" rootClose
+                        placement="top"
+                        overlay={
+                          <Popover id="reg-repassword-popover"
+                            title="Password confirmation">{"Enter your password once more."}
+                          </Popover>
+                        }
+                      >
+                        <div>{ this.renderRepasswordInput.call(this) }</div>
+                      </OverlayTrigger>
+                      { this.state.repasswordError && this.state.repasswordTouched ? <Alert bsStyle="danger" >{this.state.repasswordError}</Alert> : '' }
+                    </div>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="col-sm-offset-2 col-sm-10">
+                    <button disabled={this.submitable.call(this) ? false : true} type="submit" className="btn btn-default">Sign up</button>
+                  </div>
+                </div>
+              </form>
+        }
+      </div>
+
     );
   }
 }

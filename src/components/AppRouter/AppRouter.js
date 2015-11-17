@@ -5,7 +5,7 @@ import App from '../App';
 import GatePage from '../GatePage';
 import Marketing from '../Marketing';
 import SignUp from '../SignUp';
-import Forgot from '../Forgot';
+import Forgot from '../Activation/Forgot';
 
 class AppRouter extends Component {
   render() {
@@ -17,7 +17,7 @@ class AppRouter extends Component {
             <IndexRoute component={Marketing} />
             <Route path="marketing" component={Marketing} />
             <Route path="signup" component={SignUp} />
-            <Route path="forgot/:key" component={Forgot} />
+            <Route path="forgot" component={Forgot} />
           </Route>
         </Route>
       </Router>

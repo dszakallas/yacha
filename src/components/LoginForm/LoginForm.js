@@ -1,10 +1,8 @@
 import React, { PropTypes, Component } from 'react';
 import { Alert } from 'react-bootstrap';
-import withStyles from '../../decorators/withStyles';
-import styles from './LoginForm.less'
 
+import { Link } from 'react-router';
 
-@withStyles(styles)
 class LoginForm extends Component {
 
   constructor() {
@@ -32,7 +30,7 @@ class LoginForm extends Component {
   render() {
 
     return (
-      <form className="login" onSubmit={this.submit.bind(this)}>
+      <form onSubmit={this.submit.bind(this)}>
         { this.state.error ? <Alert bsStyle="danger" >{this.state.error}</Alert> : '' }
         <div className={ this.state.error ? "has-error" : null }>
           <div className="form-group">
@@ -62,7 +60,7 @@ class LoginForm extends Component {
               onChange={(e) => this.setState({ remember: e.target.value}) }  />
               Remember me
           </label>
-          <Link href={this.}>Forgot your password?</Link>
+          <Link to={'/gate/forgot'}>Forgot your password?</Link>
         </div>
         <button type="submit" className="btn btn-default">Sign in</button>
       </form>
