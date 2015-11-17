@@ -24,7 +24,8 @@
     "source-map-support": "~0.3.2",
     "superagent": "~1.4.0",
     "redis": "~2.3.0",
-    "cookie-parser": "~1.4.0"
+    "cookie-parser": "~1.4.0",
+    "body-parser": "~1.14.1"
   },
   "devDependencies": {
     "autoprefixer": "^6.0.3",
