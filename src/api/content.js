@@ -555,7 +555,7 @@ router.post('/user/admin/rooms', async (req,res) => {
     let nroomstring = JSON.stringify(nroom);
     redisClient.set(ID,nroomstring); 
     let rData = {"name" : nroom.Name, "id" : nroom.ID,  "members" : nroom.Members, "admins" :nroom.Admins, "private" : nroom.Private};
-    res.status(201).send(nroom);
+    res.status(201).send(rData);
     console.log("user/admin/rooms POST");
   });
 });
