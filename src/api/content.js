@@ -515,6 +515,7 @@ router.get('/user/admin/rooms',  (req,res) => {
                   res.sendStatus(404);
                   return;
                 }
+                
                 let admins = roomData.Admins;
                 for (var j = 0; j < admins.length; j++) {
                     if (admins[j] === UserId) {
