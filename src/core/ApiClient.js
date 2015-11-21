@@ -8,10 +8,10 @@ function apiUrl(path) {
 
 const ApiClient = {
 
-  login: (username, password) => new Promise((resolve, reject) => {
+  login: (email, password) => new Promise((resolve, reject) => {
     request
       .post(apiUrl('/login'))
-      .send({username: username, password: password})
+      .send({email: email, password: password})
       /*.accept('application/json')*/
       .end((err, res) => {
         if (err) {
