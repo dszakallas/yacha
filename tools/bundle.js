@@ -26,12 +26,12 @@ export default task('bundle', async () => new Promise((resolve, reject) => {
 
     console.log(stats.toString(config[0].stats));
 
-    if (++bundlerRunCount === (global.WATCH ? config.length : 1)) {
+    if (++bundlerRunCount === (process.env.WATCH ? config.length : 1)) {
       return resolve();
     }
   }
 
-  if (global.WATCH) {
+  if (process.env.WATCH) {
     bundler.watch(200, bundle);
   } else {
     bundler.run(bundle);
