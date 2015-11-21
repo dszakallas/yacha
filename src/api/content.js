@@ -85,7 +85,7 @@ redisClient.on('connect', () => {
 });
 
 router.post('/login',  (req,res) => {
-  let email = req.body.username;
+  let email = req.body.email;
   let pw1 = req.body.password;
   if (!email || !pw1) {
     console.log("nincs");
@@ -656,7 +656,7 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
       if (reply === 1) {
           redisClient.exists(roomid, (err, reply) => {
               if (reply === 1) {
-                  
+
                   // setup e-mail data with unicode symbols
                   redisClient.get(roomid, (err,reply) => {
                       if (err){
@@ -839,7 +839,7 @@ router.get('/user/friends/invite',  (req,res) => {
 
 router.put('/user/friends/invite/:uid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
-   
+
     redisClient.get(UserId, (err, reply) => {
           if (err){
             res.sendStatus(404);
@@ -894,7 +894,7 @@ router.put('/user/friends/invite/:uid',  (req,res) => {
 router.get('/user/friends/invite/requests',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
-  
+
 
         redisClient.get(UserId, (err, reply) => {
             if (err){
