@@ -108,7 +108,7 @@ router.post('/login', async (req,res) => {
 
 
             
-            if (userData.Password === pwHash && activated === true){
+            if (userData.Password === pwHash){
               let authNumber = crypto.randomBytes(64).toString('hex');
               userData.AuthNumber=authNumber;
               let userString = JSON.stringify(userData);
