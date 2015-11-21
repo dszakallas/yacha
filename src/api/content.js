@@ -11,10 +11,11 @@ import crypto from 'crypto';
 import url from 'url';
 import bodyParser from 'body-parser';
 import async from 'async'
-import nodemailer from 'nodemailer-smtp-transport';
+import nodemailer from 'nodemailer';
+import smtp from 'nodemailer-smtp-transport';
 
 // create reusable transporter object using SMTP transport
-let transporter = nodemailer.createTransport({
+let transporter = nodemailer.createTransport(smtp({
     port: process.env.MAILGUN_SMTP_PORT,
     host: process.env.MAILGUN_SMTP_SERVER,
     auth: {
@@ -22,7 +23,7 @@ let transporter = nodemailer.createTransport({
         pass: process.env.MAILGUN_SMTP_PASSWORD
     },
     name: 'yacha.herokuapp.com'
-});
+}));
 
 
 
@@ -86,7 +87,7 @@ redisClient.on('connect', () => {
 router.post('/login', async (req,res) => {
   let email = req.body.username;
   let pw1 = req.body.password;
-  if (!(email && pw1)){
+  if (!email || !pw1) {
     console.log("nincs");
     res.sendStatus(400);
     return;
