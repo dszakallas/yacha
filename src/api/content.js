@@ -86,7 +86,7 @@ router.post('/login', async (req,res) => {
   let pw1 = req.body.password;
   if (!(email && pw1)){
     console.log("nincs");
-    res.sendStatus(401);
+    res.sendStatus(400);
     return;
   }
 
@@ -137,11 +137,11 @@ router.post('/login', async (req,res) => {
 
 router.post('/register', async (req,res) => {
 
-  let nickname = req.body.nickname;
+  let nickname = req.body.username;
   let email = req.body.email;
   let pw1 = req.body.password;
   if (!(nickname && email && pw1)){
-    res.sendStatus(500);
+    res.sendStatus(400);
     return;
   }
   redisClient.select(0);
