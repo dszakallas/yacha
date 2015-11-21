@@ -101,6 +101,7 @@ router.post('/login', async (req,res) => {
           else{
             let userDatastring=reply;
             let userData=JSON.parse(userDatastring);
+
             let activated = false;
             if (userData.Activated){
               activated = userData.Activated;
@@ -129,6 +130,9 @@ router.post('/login', async (req,res) => {
           }
           
         });
+    }
+    else {
+      res.sendStatus(404);
     }
          
   }); 
