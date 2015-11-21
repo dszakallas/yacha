@@ -142,6 +142,7 @@ router.post('/register',  (req,res) => {
   let email = req.body.email;
   let pw1 = req.body.password;
   if (!(nickname && email && pw1)){
+    console.log("/api/register: Missing fields");
     res.sendStatus(400);
     return;
   }
