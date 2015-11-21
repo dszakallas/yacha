@@ -3,6 +3,8 @@ import { Alert } from 'react-bootstrap';
 
 import { Link } from 'react-router';
 
+import ApiClient from '../../core/ApiClient';
+
 class LoginForm extends Component {
 
   constructor() {
@@ -17,13 +19,24 @@ class LoginForm extends Component {
     };
   }
 
-  submit(e) {
+  async submit(e) {
     e.preventDefault();
     if(!this.state.loginName || !this.state.password) {
       this.setState({ error: "Fill in both fields" });
     } else {
       this.setState({ error: '' });
       console.log("submitting form");
+      try {
+        const response = await ApiClient.login(this.state.loginName, this.state.password);
+        history.pushState('/home');
+      } catch(err) {
+        if(err.status === 401) {
+          this.setState({ error: 'Invalid username or password' });
+        } else {
+          this.setState({ error: 'Something went wrong', loginName:'', password:'' });
+          console.warn(`LoginForm: server returned ${err}`);
+        }
+      }
     }
   }
 
