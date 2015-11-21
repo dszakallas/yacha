@@ -454,6 +454,11 @@ router.post('/user/rooms/:roomid/messages', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     redisClient.select(1);
     let roomid = req.params.roomid;
+    let msg = req.body.message;
+    if (!msg){
+      res.sendStatus(400);
+      return;
+    }
     redisClient.get(roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
@@ -479,7 +484,6 @@ router.post('/user/rooms/:roomid/messages', async (req,res) => {
                     + currentDate.getHours() + ":"  
                     + currentDate.getMinutes() + ":" 
                     + currentDate.getSeconds();
-                let msg = req.body.message;
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
                 messages.push(nmsg);
                 if (messages.length > 50)
@@ -550,6 +554,10 @@ router.post('/user/admin/rooms', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     redisClient.select(1);
     let Name = req.body.name;
+    if (!Name){
+      res.sendStatus(404);
+      return;
+    }
     let Admins=[UserId];
     let Messages = [];
     let Private = false;
