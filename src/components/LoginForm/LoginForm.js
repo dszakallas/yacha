@@ -13,7 +13,7 @@ class LoginForm extends Component {
     this.state = {
       error: "",
 
-      loginName: "",
+      email: "",
       password: "",
       remember: true
     };
@@ -21,19 +21,19 @@ class LoginForm extends Component {
 
   async submit(e) {
     e.preventDefault();
-    if(!this.state.loginName || !this.state.password) {
+    if(!this.state.email || !this.state.password) {
       this.setState({ error: "Fill in both fields" });
     } else {
       this.setState({ error: '' });
       console.log("submitting form");
       try {
-        const response = await ApiClient.login(this.state.loginName, this.state.password);
+        const response = await ApiClient.login(this.state.email, this.state.password);
         history.pushState('/home');
       } catch(err) {
         if(err.status === 401) {
-          this.setState({ error: 'Invalid username or password' });
+          this.setState({ error: 'Invalid email or password' });
         } else {
-          this.setState({ error: 'Something went wrong', loginName:'', password:'' });
+          this.setState({ error: 'Something went wrong', email:'', password:'' });
           console.warn(`LoginForm: server returned ${err}`);
         }
       }
@@ -52,8 +52,8 @@ class LoginForm extends Component {
               className="form-control"
               id="login"
               placeholder="Username or email"
-              value={this.state.loginName}
-              onChange={(e) => this.setState({ loginName: e.target.value }) } />
+              value={this.state.email}
+              onChange={(e) => this.setState({ email: e.target.value }) } />
           </div>
           <div className="form-group">
             <label htmlFor="password" className="sr-only">Password</label>
