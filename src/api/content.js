@@ -10,7 +10,7 @@ import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
 import url from 'url';
 import bodyParser from 'body-parser';
-import  from ''
+import async from 'async'
 import nodemailer from 'nodemailer';
 import smtp from 'nodemailer-smtp-transport';
 
@@ -57,7 +57,7 @@ function checkAuthentication (req, res, cb){
     UserId = 'undef';
     console.log(randNum);
     redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               let userData = JSON.parse(value);
               if (userData.AuthNumber === randNum){
@@ -158,7 +158,7 @@ router.post('/register',  (req,res) => {
         let pwhash = crypto.createHash('md5').update(pw1).digest('hex');
         let validNickName=true;
         redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               let userData = JSON.parse(value);
               if (userData.NickName === nickname){
@@ -250,7 +250,7 @@ router.get('/user/rooms',   (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let rooms = [];
     redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               if (err){
                 res.sendStatus(404);
@@ -511,7 +511,7 @@ router.get('/user/admin/rooms',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let rooms = [];
     redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               if (err){
                 res.sendStatus(404);
@@ -764,7 +764,7 @@ router.get('/users/search/:keyword',  (req,res) => {
     let kw = req.params.keyword;
     let users = [];
     redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               if (err){
                 res.sendStatus(404);
@@ -1029,7 +1029,7 @@ router.get('/user/pm/:uid',  (req,res) => {
     let otherUser = req.params.uid;
     let room = 'undef';
     redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               if (err){
                 res.sendStatus(404);
@@ -1095,7 +1095,7 @@ router.post('/user/pm/:uid',  (req,res) => {
     let otherUser = req.params.uid;
     let room = 'undef';
     redisClient.keys('*', function(err, keys) {
-          .each(keys, function(key, callback) {
+          async.each(keys, function(key, callback) {
             redisClient.get(key, function(err, value) {
               if (err){
                 res.sendStatus(404);
@@ -1256,7 +1256,7 @@ router.post('/activate/verify',  (req,res) => {
       }
       let valid = false;
        redisClient.keys('*', function(err, keys) {
-            .each(keys, function(key, callback) {
+            async.each(keys, function(key, callback) {
               redisClient.get(key, function(err, value) {
                 let userData = JSON.parse(value);
                 if (!userData.NickName){
@@ -1335,7 +1335,7 @@ router.post('/forgot/verify',  (req,res) => {
       }
       let valid = false;
        redisClient.keys('*', function(err, keys) {
-            .each(keys, function(key, callback) {
+            async.each(keys, function(key, callback) {
               redisClient.get(key, function(err, value) {
                 let userData = JSON.parse(value);
                 if (!userData.NickName){
