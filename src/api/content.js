@@ -11,15 +11,17 @@ import crypto from 'crypto';
 import url from 'url';
 import bodyParser from 'body-parser';
 import async from 'async'
-import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer-smtp-transport';
 
 // create reusable transporter object using SMTP transport
 let transporter = nodemailer.createTransport({
-    service: 'Gmail',
+    port: process.env.MAILGUN_SMTP_PORT,
+    host: process.env.MAILGUN_SMTP_SERVER,
     auth: {
-        user: 'fds',
-        pass: 'fg'
-    }
+        user: process.env.MAILGUN_SMTP_LOGIN,
+        pass: process.env.MAILGUN_SMTP_PASSWORD
+    },
+    name: 'yacha.herokuapp.com'
 });
 
 
@@ -108,7 +110,7 @@ router.post('/login', async (req,res) => {
             }
 
 
-            
+
             if (userData.Password === pwHash && activated === true){
               let authNumber = crypto.randomBytes(64).toString('hex');
               userData.AuthNumber=authNumber;
@@ -117,26 +119,26 @@ router.post('/login', async (req,res) => {
               redisClient.del(email);
               redisClient.set(email,userString);
               res.cookie('AuthNumber', authNumber);
-              let resData = {"username" : email, "nickname" : userData.NickName}; 
-              res.status(200).send(resData); 
-         
-              
+              let resData = {"username" : email, "nickname" : userData.NickName};
+              res.status(200).send(resData);
+
+
             }
             else {
                   console.log("rossz jelszo");
                   res.sendStatus(401);
             }
-             
+
           }
-          
+
         });
     }
     else {
       res.sendStatus(404);
     }
-         
-  }); 
-}); 
+
+  });
+});
 
 
 router.post('/register', async (req,res) => {
@@ -181,9 +183,9 @@ router.post('/register', async (req,res) => {
               }
           });
         });
-        
+
     }
-  }); 
+  });
 });
 
 router.get('/user', async (req,res) => {
@@ -200,12 +202,12 @@ router.get('/user', async (req,res) => {
           let publicParams = {"nickname" : userData.NickName, "email" : userData.Email };
           res.send(publicParams);
         }
-            
+
     });
 
     console.log('User GET');
   });
-}); 
+});
 
 router.put('/user', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
@@ -233,7 +235,7 @@ router.put('/user', async (req,res) => {
           let publicParams = {"nickname" : nickname, "password" : password};
           res.status(200).send(publicParams);
         }
-            
+
     });
 
   });
@@ -268,7 +270,7 @@ router.get('/user/rooms',  async (req,res) => {
                 for (var j = 0; j < members.length; j++) {
                     if (members[j] === UserId) {
                         let resData = {"id" : key, "name" : roomData.Name};
-                        
+
                         for (var k=0; k<roomData.Admins.length; k++){
                           if (roomData.Admins[k] === UserId)
                           {
@@ -280,7 +282,7 @@ router.get('/user/rooms',  async (req,res) => {
                     }
                 }
               }
-            
+
             callback(err);
             });
           }, function() {
@@ -289,7 +291,7 @@ router.get('/user/rooms',  async (req,res) => {
         });
     console.log('User/rooms GET');
   });
-}); 
+});
 
 router.get('/user/rooms/:roomid', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
@@ -301,7 +303,7 @@ router.get('/user/rooms/:roomid', async (req,res) => {
               res.sendStatus(404);
             }
             else{
-              
+
               let roomData = JSON.parse(reply);
               if (roomData === null){
                 res.sendStatus(404);
@@ -325,7 +327,7 @@ router.get('/user/rooms/:roomid', async (req,res) => {
     });
     console.log('get rooms/roomid');
   });
-}); 
+});
 
 router.delete('/user/rooms/:roomid', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
@@ -358,12 +360,12 @@ router.delete('/user/rooms/:roomid', async (req,res) => {
                   }
               }
               roomData.Admins = nAdmins;
-              
+
 
               for (var i = 0; i < members.length; i++) {
                   if (members[i] != UserId) {
                     nmembers.push(members[i]);
-                  } 
+                  }
               }
               roomData.Members = nmembers;
               roomDataString = JSON.stringify(roomData);
@@ -372,7 +374,7 @@ router.delete('/user/rooms/:roomid', async (req,res) => {
             }
     });
     console.log('User/rooms/:roomid DELETE');
-  }); 
+  });
 });
 
 router.post('/user/rooms/:roomid/join', async (req,res) => {
@@ -385,7 +387,7 @@ router.post('/user/rooms/:roomid/join', async (req,res) => {
               res.sendStatus(404);
             }
             else{
-   
+
               let roomData = JSON.parse(reply);
               if (roomData === null){
                 res.sendStatus(404);
@@ -397,7 +399,7 @@ router.post('/user/rooms/:roomid/join', async (req,res) => {
                     let resCode = {"reason" : 11};
                     res.status(400).send(resCode);
                     return;
-                  } 
+                  }
               }
               members.push(UserId);
               roomData.Members = members;
@@ -408,7 +410,7 @@ router.post('/user/rooms/:roomid/join', async (req,res) => {
     });
     console.log("User/rooms/:roomid/join POST");
   });
-}); 
+});
 
 router.get('/user/rooms/:roomid/messages', async (req,res) => {
   checkAuthentication(req,res, (req,res) => {
@@ -446,10 +448,10 @@ router.get('/user/rooms/:roomid/messages', async (req,res) => {
     });
     console.log("User/rooms/:roomid/messages GET");
   });
-}); 
+});
 
 router.post('/user/rooms/:roomid/messages', async (req,res) => {
-  
+
   checkAuthentication(req,res, (req,res) => {
     redisClient.select(1);
     let roomid = req.params.roomid;
@@ -476,12 +478,12 @@ router.post('/user/rooms/:roomid/messages', async (req,res) => {
               }
               if (member){
                 let messages = roomData.Messages;
-                let currentDate = new Date(); 
+                let currentDate = new Date();
                 let datetime = currentDate.getDate() + "/"
-                    + (currentDate.getMonth()+1)  + "/" 
-                    + currentDate.getFullYear() + " @ "  
-                    + currentDate.getHours() + ":"  
-                    + currentDate.getMinutes() + ":" 
+                    + (currentDate.getMonth()+1)  + "/"
+                    + currentDate.getFullYear() + " @ "
+                    + currentDate.getHours() + ":"
+                    + currentDate.getMinutes() + ":"
                     + currentDate.getSeconds();
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
                 messages.push(nmsg);
@@ -504,11 +506,11 @@ router.post('/user/rooms/:roomid/messages', async (req,res) => {
                 res.sendStatus(204);
 
               }
-              
+
             }
     });
     console.log("User/rooms/:roomid/messages POST");
-  }); 
+  });
 });
 
 router.get('/user/admin/rooms', async (req,res) => {
@@ -538,7 +540,7 @@ router.get('/user/admin/rooms', async (req,res) => {
                     }
                 }
               }
-            
+
             callback(err);
             });
           }, function() {
@@ -564,7 +566,7 @@ router.post('/user/admin/rooms', async (req,res) => {
     let ID = crypto.randomBytes(64).toString('hex');
     let nroom = {"Name" : Name, "Admins" : Admins, "Messages" : Messages, "Private" : Private, "ID": ID, "Members" : Members};
     let nroomstring = JSON.stringify(nroom);
-    redisClient.set(ID,nroomstring); 
+    redisClient.set(ID,nroomstring);
     let rData = {"name" : nroom.Name, "id" : nroom.ID,  "members" : nroom.Members, "admins" :nroom.Admins, "private" : nroom.Private};
     res.status(201).send(rData);
     console.log("user/admin/rooms POST");
@@ -644,7 +646,7 @@ router.put('/user/admin/rooms/:roomid', async (req,res) => {
               else{
                 res.sendStatus(204);
               }
-              
+
             }
     });
     console.log("user/admin/rooms/roomid PUT");
@@ -676,7 +678,7 @@ router.put('/user/admin/rooms/:roomid/invite/:uname', async (req,res) => {
                           subject: 'Hello ✔', // Subject line
                           text: 'Hello \n' + UserId + 'Invited you to a room ' + roomData.Name+ '\n, to join please click on this link: ' + 'http://localhost:5000/api/valafdmi' +
                           'majd ide megy a link a szoba azonosítojával a frontendre' // plaintext body
-    
+
                       };
 
                       // send mail with defined transport object
@@ -691,19 +693,19 @@ router.put('/user/admin/rooms/:roomid/invite/:uname', async (req,res) => {
                   });
                 });
 
-                  
-              } 
+
+              }
               else{
                   res.status(400).send({"reason" : 1});
               }
             });
 
-      } 
+      }
       else{
           res.status(400).send({"reason" : 0});
       }
     });
-    
+
     console.log('/user/admin/rooms/:roomid/invite/:uname');
 });
 });
@@ -734,7 +736,7 @@ router.delete('/user/admin/rooms/:roomid', async (req,res) => {
               else{
                 res.sendStatus(204);
               }
-              
+
             }
     });
     console.log("user/admin/rooms/roomid DELETE");
@@ -760,7 +762,7 @@ router.get('/users/:userid', async (req,res) => {
           let publicParams = {"nickname" : userData.NickName, "email" : userData.Email };
           res.status(200).send(publicParams);
         }
-            
+
     });
 
     console.log('User/:userid GET');
@@ -785,7 +787,7 @@ router.get('/users/search/:keyword', async (req,res) => {
                   users.push({"nickname" : userData.NickName, "email" : key});
                 }
               }
-            
+
             callback(err);
             });
           }, function() {
@@ -811,10 +813,10 @@ router.get('/user/friends', async (req,res) => {
             res.sendStatus(404);
             return;
           }
-          
+
           res.send(userData.Friends);
         }
-            
+
     });
     console.log("user/friends GET");
   });
@@ -835,10 +837,10 @@ router.get('/user/friends/invite', async (req,res) => {
             res.sendStatus(404);
             return;
           }
-          
+
           res.send(userData.FriendInvites);
         }
-            
+
     });
     console.log("user/friends/invite GET");
   });
@@ -857,7 +859,7 @@ router.put('/user/friends/invite/:uid', async (req,res) => {
               res.sendStatus(404);
               return;
             }
-            
+
             let userToInvite = req.params.uid;
             redisClient.get(userToInvite, (err, reply) => {
               if (err){
@@ -892,7 +894,7 @@ router.put('/user/friends/invite/:uid', async (req,res) => {
             });
 
           }
-              
+
       });
   console.log("user/friends/invite/:uid PUT");
   });
@@ -913,10 +915,10 @@ router.get('/user/friends/invite/requests', async (req,res) => {
                 res.sendStatus(404);
                 return;
               }
-              
+
               res.send(userData.FriendRequests);
             }
-                
+
         });
       console.log("user/friends/invite/requests GET");
     });
@@ -936,7 +938,7 @@ router.put('/user/friends/invite/requests/:uid', async (req,res) => {
               res.sendStatus(404);
               return;
             }
-            
+
             let newFriend = req.params.uid;
             let possibleFriend = false;
 
@@ -990,7 +992,7 @@ router.put('/user/friends/invite/requests/:uid', async (req,res) => {
                   if (userData.FriendRequests[i].email !=newFriend){
                     friendRequests.push(userData.FriendRequests[i]);
                   }
-                } 
+                }
                 userData.FriendRequests = friendRequests;
 
                 let friendInvites = [];
@@ -999,7 +1001,7 @@ router.put('/user/friends/invite/requests/:uid', async (req,res) => {
                   if (userData.FriendInvites[i].email !=newFriend){
                     friendInvites.push(userData.FriendInvites[i]);
                   }
-                } 
+                }
                 userData.FriendInvites = friendInvites;
 
                 friendRequests = [];
@@ -1008,7 +1010,7 @@ router.put('/user/friends/invite/requests/:uid', async (req,res) => {
                   if (userDataFriend.FriendRequests[i].email !=UserId){
                     friendRequests.push(userData.FriendRequests[i]);
                   }
-                } 
+                }
                 userDataFriend.FriendRequests = friendRequests;
 
                 friendInvites = [];
@@ -1017,7 +1019,7 @@ router.put('/user/friends/invite/requests/:uid', async (req,res) => {
                   if (userDataFriend.FriendInvites[i].email !=UserId){
                     friendInvites.push(userDataFriend.FriendInvites[i]);
                   }
-                } 
+                }
                 userDataFriend.FriendInvites = friendInvites;
                 redisClient.set(UserId,JSON.stringify(userData));
                 redisClient.set(newFriend,JSON.stringify(userDataFriend));
@@ -1027,10 +1029,10 @@ router.put('/user/friends/invite/requests/:uid', async (req,res) => {
             });
 
           }
-              
+
       });
       console.log("user/friends/invite/requests/:uid PUT");
-    });   
+    });
 });
 
 router.get('/user/pm/:uid', async (req,res) => {
@@ -1074,7 +1076,7 @@ router.get('/user/pm/:uid', async (req,res) => {
                   room = roomData;
                 }
               }
-            
+
             callback(err);
             });
           }, function() {
@@ -1137,19 +1139,19 @@ router.post('/user/pm/:uid', async (req,res) => {
                   room = roomData;
                 }
               }
-            
+
             callback(err);
             });
           }, function() {
               if (room != 'undef'){
                 let roomData = room;
                 let messages = roomData.Messages;
-                let currentDate = new Date(); 
+                let currentDate = new Date();
                 let datetime = currentDate.getDate() + "/"
-                    + (currentDate.getMonth()+1)  + "/" 
-                    + currentDate.getFullYear() + " @ "  
-                    + currentDate.getHours() + ":"  
-                    + currentDate.getMinutes() + ":" 
+                    + (currentDate.getMonth()+1)  + "/"
+                    + currentDate.getFullYear() + " @ "
+                    + currentDate.getHours() + ":"
+                    + currentDate.getMinutes() + ":"
                     + currentDate.getSeconds();
                 let msg = req.body.message;
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
@@ -1177,12 +1179,12 @@ router.post('/user/pm/:uid', async (req,res) => {
                 let nroomstring = JSON.stringify(roomData);
                 redisClient.set(ID,nroomstring);
                 let messages = roomData.Messages;
-                let currentDate = new Date(); 
+                let currentDate = new Date();
                 let datetime = currentDate.getDate() + "/"
-                    + (currentDate.getMonth()+1)  + "/" 
-                    + currentDate.getFullYear() + " @ "  
-                    + currentDate.getHours() + ":"  
-                    + currentDate.getMinutes() + ":" 
+                    + (currentDate.getMonth()+1)  + "/"
+                    + currentDate.getFullYear() + " @ "
+                    + currentDate.getHours() + ":"
+                    + currentDate.getMinutes() + ":"
                     + currentDate.getSeconds();
                 let msg = req.body.message;
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
@@ -1242,8 +1244,8 @@ router.post('/activate/send', async (req,res) => {
                 res.sendStatus(204);
 
           });
-        
-         }   
+
+         }
       });
       console.log("activate/send post");
 });
@@ -1268,7 +1270,7 @@ router.post('/activate/verify', async (req,res) => {
             }, function() {
               if (valid === false)
                 res.sendStatus(400);
-             
+
             });
       });
       console.log("activate/verify post");
@@ -1311,8 +1313,8 @@ router.post('/forgot/send', async (req,res) => {
                 res.sendStatus(204);
 
           });
-        
-         }   
+
+         }
       });
       console.log("forgot/send post");
 });
@@ -1334,8 +1336,8 @@ router.post('/forgot/verify', async (req,res) => {
                   redisClient.del(email);
                   redisClient.set(email,userString);
                   res.cookie('AuthNumber', authNumber);
-                  let resData = {"username" : email, "nickname" : userData.NickName}; 
-                  res.status(200).send(resData); 
+                  let resData = {"username" : email, "nickname" : userData.NickName};
+                  res.status(200).send(resData);
                   valid = true;
                 }
                 callback(err);
@@ -1350,4 +1352,3 @@ router.post('/forgot/verify', async (req,res) => {
 });
 
 export default router;
-
