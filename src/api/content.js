@@ -44,8 +44,8 @@ router.use(bodyParser.urlencoded({ extended: true })); // for parsing applicatio
 let redisClient;
 let UserId = 'undef';
 
-if (process.env.REDISTOGO_URL) {
-  let rtg   = url.parse(process.env.REDISTOGO_URL);
+if (process.env.REDISCLOUD_URL) {
+  let rtg   = url.parse(process.env.REDISCLOUD_URL);
   redisClient = redis.createClient(rtg.port, rtg.hostname);
 } else {
   redisClient = redis.createClient();
