@@ -46,7 +46,7 @@ let UserId = 'undef';
 
 if (process.env.REDISCLOUD_URL) {
   let rtg   = url.parse(process.env.REDISCLOUD_URL);
-  redisClient = redis.createClient(rtg.port, rtg.hostname);
+  redisClient = redis.createClient(rtg.port, rtg.hostname, {no_ready_check: true});
 } else {
   redisClient = redis.createClient();
 }
