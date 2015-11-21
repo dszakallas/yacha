@@ -1,0 +1,6 @@
+{
+  "name": "AppRouter",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./AppRouter.js"
+}

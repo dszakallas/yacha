@@ -6,10 +6,8 @@
   },
   "dependencies": {
     "babel-core": "~5.8.25",
-    "body-parser": "~1.14.1",
     "bootstrap": "~3.3.5",
     "classnames": "~2.1.5",
-    "cookie-parser": "~1.4.0",
     "eventemitter3": "~1.1.1",
     "express": "~4.13.3",
     "fastclick": "~1.0.6",
@@ -18,16 +16,18 @@
     "front-matter": "~1.0.0",
     "history": "~1.12.0",
     "jade": "~1.11.0",
-    "nodemailer": "~1.10.0",
-    "nodemailer-smtp-transport": "^1.0.4",
     "normalize.css": "~3.0.3",
     "react": "~0.14.0",
     "react-bootstrap": "~0.27.3",
     "react-dom": "~0.14.0",
     "react-router": "1.0.0-rc4",
-    "redis": "~2.3.0",
     "source-map-support": "~0.3.2",
-    "superagent": "~1.4.0"
+    "superagent": "~1.4.0",
+    "redis": "~2.3.0",
+    "cookie-parser": "~1.4.0",
+    "body-parser": "~1.14.1",
+    "node-mailer": "~0.1.1",
+    "nodemailer": "~1.10.0"
   },
   "devDependencies": {
     "autoprefixer": "^6.0.3",
@@ -88,6 +88,7 @@
     "bundle": "babel-node --eval \"require('./tools/bundle')().catch(err => console.error(err.stack))\"",
     "build": "babel-node --eval \"require('./tools/build')().catch(err => console.error(err.stack))\"",
     "serve": "babel-node --eval \"require('./tools/serve')().catch(err => console.error(err.stack))\"",
-    "start": "babel-node --eval \"require('./tools/start')().catch(err => console.error(err.stack))\""
+    "start": "babel-node --eval \"require('./tools/start')().catch(err => console.error(err.stack))\"",
+    "devserver": "babel-node --eval \"require('./tools/devserver')().catch(err => console.error(err.stack))\""
   }
 }

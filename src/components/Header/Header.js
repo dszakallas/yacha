@@ -1,28 +1,22 @@
-/*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
+import React, { PropTypes, Component } from 'react';
+import { render } from 'react-dom'
+import { Router, Route, Link } from 'react-router'
 
-import React, { Component } from 'react';
-import styles from './Header.css';
 import withStyles from '../../decorators/withStyles';
-import Link from '../Link';
-import Navigation from '../Navigation';
+import styles from './Header.less';
 
 @withStyles(styles)
 class Header extends Component {
 
   render() {
     return (
-      <div className="Header">
-        <div className="Header-container">
-          <a className="Header-brand" href="/" onClick={Link.handleClick}>
-            <img className="Header-brandImg" src={require('./logo-small.png')} width="38" height="38" alt="React" />
-            <span className="Header-brandTxt">Your Company</span>
-          </a>
-          <Navigation className="Header-nav" />
-          <div className="Header-banner">
-            <h1 className="Header-bannerTitle">React</h1>
-            <p className="Header-bannerDesc">Complex web apps made easy</p>
-          </div>
-        </div>
+      <div className="header">
+        <ul className="nav nav-pills pull-right">
+          <li><Link to={`/login`}>Sign in</Link></li>
+          <li><Link to={`/signup`}>Sign up</Link></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+        <h3 className="text-muted">Yacha</h3>
       </div>
     );
   }

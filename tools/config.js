@@ -163,6 +163,10 @@ const appConfig = merge({}, config, {
         test: /\.css$/,
         loader: 'style-loader/useable!css-loader!postcss-loader',
       },
+      {
+        test: /\.less$/,
+        loader: 'style-loader/useable!css-loader!postcss-loader!less-loader'
+      }
     ],
   },
 });

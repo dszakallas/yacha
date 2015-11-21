@@ -1,13 +1,16 @@
 /*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
 
 import 'babel-core/polyfill';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import FastClick from 'fastclick';
-import Router from './routes';
+import { Router, Route, Link, IndexRoute } from 'react-router';
 import Location from './core/Location';
+
+import AppRouter from './components/AppRouter';
+
 import { addEventListener, removeEventListener } from './utils/DOMUtils';
 
-let cssContainer = document.getElementById('css');
 const appContainer = document.getElementById('app');
 const context = {
   onSetTitle: value => document.title = value,
@@ -28,22 +31,14 @@ const context = {
 };
 
 function render(state) {
-  Router.dispatch(state, (newState, component) => {
-    ReactDOM.render(component, appContainer, () => {
-      // Restore the scroll position if it was saved into the state
-      if (state.scrollY !== undefined) {
-        window.scrollTo(state.scrollX, state.scrollY);
-      } else {
-        window.scrollTo(0, 0);
-      }
+  ReactDOM.render(<AppRouter />, appContainer, () => {
+    // Restore the scroll position if it was saved into the state
+    if (state.scrollY !== undefined) {
+      window.scrollTo(state.scrollX, state.scrollY);
+    } else {
+      window.scrollTo(0, 0);
+    }
 
-      // Remove the pre-rendered CSS because it's no longer used
-      // after the React app is launched
-      if (cssContainer) {
-        cssContainer.parentNode.removeChild(cssContainer);
-        cssContainer = null;
-      }
-    });
   });
 }
 
