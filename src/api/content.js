@@ -56,9 +56,9 @@ function checkAuthentication (req, res, cb){
     let randNum = req.cookies.AuthNumber;
     UserId = 'undef';
     console.log(randNum);
-    redisClient.keys('*', function(err, keys) {
+    redisClient.hkeys('users', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('users', key, function(err, value) {
               let userData = JSON.parse(value);
               if (userData.AuthNumber === randNum){
                 UserId=key;
@@ -94,10 +94,10 @@ router.post('/login',  (req,res) => {
   }
 
 
-  redisClient.exists(email, (err, reply) => {
+  redisClient.hexists('users', email, (err, reply) => {
     if (reply === 1) {
         let pwHash = crypto.createHash('md5').update(pw1).digest('hex');
-        redisClient.get(email, (err, reply) => {
+        redisClient.hget('users', email, (err, reply) => {
           if (err){
             res.sendStatus(401);
           }
@@ -110,13 +110,13 @@ router.post('/login',  (req,res) => {
               activated = userData.Activated;
             }
 
-            if (userData.Password != pwHash && activated === true){
+            if (userData.Password === pwHash && activated === true){
               let authNumber = crypto.randomBytes(64).toString('hex');
               userData.AuthNumber=authNumber;
               let userString = JSON.stringify(userData);
               console.log(userString);
-              redisClient.del(email);
-              redisClient.set(email,userString);
+              redisClient.hdel('users', email);
+              redisClient.hset('users',email,userString);
               res.cookie('AuthNumber', authNumber);
               let resData = {"username" : email, "nickname" : userData.NickName};
               res.status(200).send(resData);
@@ -149,7 +149,7 @@ router.post('/register',  (req,res) => {
     return;
   }
 
-  redisClient.exists(email, (err, reply) => {
+  redisClient.hexists('users',email, (err, reply) => {
     if (reply === 1) {
         console.log('exists');
         let reasonCode = {"reason" : 0};
@@ -157,10 +157,11 @@ router.post('/register',  (req,res) => {
     } else {
         let pwhash = crypto.createHash('md5').update(pw1).digest('hex');
         let validNickName=true;
-        redisClient.keys('*', function(err, keys) {
+        redisClient.hkeys('users', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('users',key, function(err, value) {
               let userData = JSON.parse(value);
+              
               if (userData.NickName === nickname){
                 validNickName=false;
                 console.log("invalid");
@@ -176,7 +177,7 @@ router.post('/register',  (req,res) => {
                 let newuser = { "Email" : email, "NickName" : nickname, "Password" : pwhash };
                 let newuserstring = JSON.stringify(newuser);
                 console.log(newuserstring);
-                redisClient.set(email,newuserstring);
+                redisClient.hset('users', email,newuserstring);
                 res.sendStatus(204);
               }
           });
@@ -190,7 +191,7 @@ router.get('/user',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
 
-    redisClient.get(UserId, (err, reply) => {
+    redisClient.hget('users', UserId, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -216,7 +217,7 @@ router.put('/user',  (req,res) => {
       res.sendStatus(400);
       return;
     }
-    redisClient.get(UserId, (err, reply) => {
+    redisClient.hget('users', UserId, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -227,7 +228,7 @@ router.put('/user',  (req,res) => {
           if (password)
             userData.Password = crypto.createHash('md5').update(password).digest('hex');
           let newUserString = JSON.stringify(userData);
-          redisClient.set(UserId,newUserString);
+          redisClient.hset('users', UserId,newUserString);
           let publicParams = {"nickname" : nickname, "password" : password};
           res.status(200).send(publicParams);
         }
@@ -240,7 +241,7 @@ router.put('/user',  (req,res) => {
 router.delete('/user',  (req,res) => {
  checkAuthentication(req,res, (req,res) => {
 
-    redisClient.del(UserId);
+    redisClient.hdel('users', UserId);
     res.sendStatus(204);
     console.log("User DELETE");
   });
@@ -249,9 +250,9 @@ router.delete('/user',  (req,res) => {
 router.get('/user/rooms',   (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let rooms = [];
-    redisClient.keys('*', function(err, keys) {
+    redisClient.hkeys('rooms', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('rooms',key, function(err, value) {
               if (err){
                 res.sendStatus(404);
                 return ;
@@ -260,10 +261,7 @@ router.get('/user/rooms',   (req,res) => {
                 let roomDataString=value;
                 let roomData = JSON.parse(roomDataString);
 
-                if (!roomData.Members){
-                  callback(err);
-                  return;
-                }
+                
                 let members = roomData.Members;
 
                 for (var j = 0; j < members.length; j++) {
@@ -296,7 +294,7 @@ router.get('/user/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
     var roomid=req.params.roomid;
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -330,7 +328,7 @@ router.get('/user/rooms/:roomid',  (req,res) => {
 router.delete('/user/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let roomid=req.params.roomid;
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -366,7 +364,7 @@ router.delete('/user/rooms/:roomid',  (req,res) => {
               }
               roomData.Members = nmembers;
               roomDataString = JSON.stringify(roomData);
-              redisClient.set(roomid,roomDataString);
+              redisClient.hset('rooms',roomid,roomDataString);
               res.sendStatus(204);
             }
     });
@@ -378,7 +376,7 @@ router.post('/user/rooms/:roomid/join',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let roomid=req.params.roomid;
     console.log(roomid);
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -400,7 +398,7 @@ router.post('/user/rooms/:roomid/join',  (req,res) => {
               members.push(UserId);
               roomData.Members = members;
               let roomDataString = JSON.stringify(roomData);
-              redisClient.set(roomid,roomDataString);
+              redisClient.hset('rooms', roomid,roomDataString);
               res.sendStatus(204);
             }
     });
@@ -411,7 +409,7 @@ router.post('/user/rooms/:roomid/join',  (req,res) => {
 router.get('/user/rooms/:roomid/messages',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let roomid=req.params.roomid;
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -454,7 +452,7 @@ router.post('/user/rooms/:roomid/messages',  (req,res) => {
       res.sendStatus(400);
       return;
     }
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -485,7 +483,7 @@ router.post('/user/rooms/:roomid/messages',  (req,res) => {
                   messages.splice(0,1);
                 roomData.Messages=messages;
                 roomDataString = JSON.stringify(roomData);
-                redisClient.set(roomid,roomDataString);
+                redisClient.hset('rooms', roomid,roomDataString);
 
                 let messagesToSend = [];
                 for(var i=0; i<roomData.Messages.length; i++){
@@ -510,9 +508,9 @@ router.post('/user/rooms/:roomid/messages',  (req,res) => {
 router.get('/user/admin/rooms',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let rooms = [];
-    redisClient.keys('*', function(err, keys) {
+    redisClient.hkeys('rooms', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('rooms',key, function(err, value) {
               if (err){
                 res.sendStatus(404);
                 return ;
@@ -524,10 +522,7 @@ router.get('/user/admin/rooms',  (req,res) => {
                   res.sendStatus(404);
                   return;
                 }
-                if (!roomData.Members){
-                  callback(err);
-                  return;
-                }
+                
                 let admins = roomData.Admins;
 
                 for (var j = 0; j < admins.length; j++) {
@@ -562,7 +557,7 @@ router.post('/user/admin/rooms',  (req,res) => {
     let ID = crypto.randomBytes(64).toString('hex');
     let nroom = {"Name" : Name, "Admins" : Admins, "Messages" : Messages, "Private" : Private, "ID": ID, "Members" : Members};
     let nroomstring = JSON.stringify(nroom);
-    redisClient.set(ID,nroomstring);
+    redisClient.hset('rooms', ID,nroomstring);
     let rData = {"name" : nroom.Name, "id" : nroom.ID,  "members" : nroom.Members, "admins" :nroom.Admins, "private" : nroom.Private};
     res.status(201).send(rData);
     console.log("user/admin/rooms POST");
@@ -572,7 +567,7 @@ router.post('/user/admin/rooms',  (req,res) => {
 router.get('/user/admin/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     var roomid=req.params.roomid;
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -607,7 +602,7 @@ router.put('/user/admin/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
     var roomid=req.params.roomid;
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -634,7 +629,7 @@ router.put('/user/admin/rooms/:roomid',  (req,res) => {
                 if (pv)
                   roomData.Private = pv;
                 roomDataString = JSON.stringify(roomData);
-                redisClient.set(roomid,roomDataString);
+                redisClient.hset('rooms', roomid,roomDataString);
                 res.status(200).send({"name" : roomName, "members" : members, "private" : pv});
               }
               else{
@@ -652,13 +647,13 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
    let uname = req.params.uname;
    let roomid = req.params.roomid;
 
-    redisClient.exists(uname, (err, reply) => {
+    redisClient.hexists('users',uname, (err, reply) => {
       if (reply === 1) {
-          redisClient.exists(roomid, (err, reply) => {
+          redisClient.hexists('rooms',roomid, (err, reply) => {
               if (reply === 1) {
-
+                  
                   // setup e-mail data with unicode symbols
-                  redisClient.get(roomid, (err,reply) => {
+                  redisClient.hget('rooms',roomid, (err,reply) => {
                       if (err){
                         res.sendStatus(404);
                         return;
@@ -705,7 +700,7 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
 router.delete('/user/admin/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res) =>{
     let roomid = req.params.roomid;
-    redisClient.get(roomid, (err, reply) => {
+    redisClient.hget('rooms',roomid, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -721,7 +716,7 @@ router.delete('/user/admin/rooms/:roomid',  (req,res) => {
                   admin = true;
               }
               if (admin){
-                redisClient.del(roomid);
+                redisClient.hdel('rooms',roomid);
                 res.sendStatus(204);
               }
               else{
@@ -739,7 +734,7 @@ router.get('/users/:userid',  (req,res) => {
 
     let uid = req.params.userid;
 
-    redisClient.get(uid, (err, reply) => {
+    redisClient.hget('rooms',uid, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -763,19 +758,16 @@ router.get('/users/search/:keyword',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let kw = req.params.keyword;
     let users = [];
-    redisClient.keys('*', function(err, keys) {
+    redisClient.hkeys('users', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('users',key, function(err, value) {
               if (err){
                 res.sendStatus(404);
                 return ;
               }
               else{
                 let userData = JSON.parse(value);
-                if (!userData.NickName){
-                  callback(err);
-                  return;
-                }
+                
                 if (userData.NickName.search(kw) !=-1){
                   users.push({"nickname" : userData.NickName, "email" : key});
                 }
@@ -795,7 +787,7 @@ router.get('/user/friends',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
 
-    redisClient.get(UserId, (err, reply) => {
+    redisClient.hget('users',UserId, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -818,7 +810,7 @@ router.get('/user/friends/invite',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
 
-    redisClient.get(UserId, (err, reply) => {
+    redisClient.hget('users',UserId, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -839,8 +831,8 @@ router.get('/user/friends/invite',  (req,res) => {
 
 router.put('/user/friends/invite/:uid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
-
-    redisClient.get(UserId, (err, reply) => {
+   
+    redisClient.hget('users',UserId, (err, reply) => {
           if (err){
             res.sendStatus(404);
           }
@@ -852,7 +844,7 @@ router.put('/user/friends/invite/:uid',  (req,res) => {
             }
 
             let userToInvite = req.params.uid;
-            redisClient.get(userToInvite, (err, reply) => {
+            redisClient.hget('users',userToInvite, (err, reply) => {
               if (err){
                 res.sendStatus(404);
               }
@@ -877,8 +869,8 @@ router.put('/user/friends/invite/:uid',  (req,res) => {
                   userDataToInvite.FriendRequests = [{"nickname" : userData.NickName, "email" : UserId}];
                 }
 
-                redisClient.set(UserId,JSON.stringify(userData));
-                redisClient.set(userToInvite,JSON.stringify(userDataToInvite));
+                redisClient.hset('users', UserId,JSON.stringify(userData));
+                redisClient.hset('users', userToInvite,JSON.stringify(userDataToInvite));
                 res.sendStatus(204);
 
               }
@@ -894,9 +886,9 @@ router.put('/user/friends/invite/:uid',  (req,res) => {
 router.get('/user/friends/invite/requests',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
 
+  
 
-
-        redisClient.get(UserId, (err, reply) => {
+        redisClient.hget('users', UserId, (err, reply) => {
             if (err){
               res.sendStatus(404);
             }
@@ -917,7 +909,7 @@ router.get('/user/friends/invite/requests',  (req,res) => {
 
 router.put('/user/friends/invite/requests/:uid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
-    redisClient.get(UserId, (err, reply) => {
+    redisClient.hget('users', UserId, (err, reply) => {
           if (err){
             res.sendStatus(404);
           }
@@ -950,7 +942,7 @@ router.put('/user/friends/invite/requests/:uid',  (req,res) => {
               return;
             }
 
-            redisClient.get(newFriend, (err, reply) => {
+            redisClient.hget('users',newFriend, (err, reply) => {
               if (err){
                 res.sendStatus(404);
               }
@@ -1010,8 +1002,8 @@ router.put('/user/friends/invite/requests/:uid',  (req,res) => {
                   }
                 }
                 userDataFriend.FriendInvites = friendInvites;
-                redisClient.set(UserId,JSON.stringify(userData));
-                redisClient.set(newFriend,JSON.stringify(userDataFriend));
+                redisClient.hset('users', UserId,JSON.stringify(userData));
+                redisClient.hset('users', newFriend,JSON.stringify(userDataFriend));
                 res.sendStatus(204);
 
               }
@@ -1028,9 +1020,9 @@ router.get('/user/pm/:uid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let otherUser = req.params.uid;
     let room = 'undef';
-    redisClient.keys('*', function(err, keys) {
+    redisClient.hkeys('rooms', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('rooms',key, function(err, value) {
               if (err){
                 res.sendStatus(404);
                 callback(err);
@@ -1039,10 +1031,7 @@ router.get('/user/pm/:uid',  (req,res) => {
               else{
                 let roomDataString=value;
                 let roomData = JSON.parse(roomDataString);
-                if (!roomData.Members){
-                  callback(err);
-                  return;
-                }
+               
 
                 if (roomData.Private === false)
                 {
@@ -1094,9 +1083,9 @@ router.post('/user/pm/:uid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let otherUser = req.params.uid;
     let room = 'undef';
-    redisClient.keys('*', function(err, keys) {
+    redisClient.hkeys('rooms', function(err, keys) {
           async.each(keys, function(key, callback) {
-            redisClient.get(key, function(err, value) {
+            redisClient.hget('rooms', key, function(err, value) {
               if (err){
                 res.sendStatus(404);
                 callback(err);
@@ -1105,10 +1094,7 @@ router.post('/user/pm/:uid',  (req,res) => {
               else{
                 let roomDataString=value;
                 let roomData = JSON.parse(roomDataString);
-                if (!roomData.Members){
-                  callback(err);
-                  return;
-                }
+                
 
                 if (roomData.Private === false)
                 {
@@ -1155,7 +1141,7 @@ router.post('/user/pm/:uid',  (req,res) => {
                   messages.splice(0,1);
                 roomData.Messages=messages;
                 let roomDataString = JSON.stringify(roomData);
-                redisClient.set(roomData.ID,roomDataString);
+                redisClient.hset('rooms', roomData.ID,roomDataString);
                 let messagesToSend = [];
                 for(var i=0; i<roomData.Messages.length; i++){
                   messagesToSend.push({"user" : roomData.Messages[i].User, "timestamp" : roomData.Messages[i].Timestamp, "message" : roomData.Messages[i].Message});
@@ -1172,7 +1158,7 @@ router.post('/user/pm/:uid',  (req,res) => {
                 let ID = crypto.randomBytes(64).toString('hex');
                 let roomData = {"Name" : Name, "Admins" : Admins, "Messages" : Messages, "Private" : Private, "ID": ID, "Members" : Members};
                 let nroomstring = JSON.stringify(roomData);
-                redisClient.set(ID,nroomstring);
+                redisClient.hset('rooms',ID,nroomstring);
                 let messages = roomData.Messages;
                 let currentDate = new Date();
                 let datetime = currentDate.getDate() + "/"
@@ -1188,7 +1174,7 @@ router.post('/user/pm/:uid',  (req,res) => {
                   messages.splice(0,1);
                 roomData.Messages=messages;
                 let roomDataString = JSON.stringify(roomData);
-                redisClient.set(roomData.ID,roomDataString);
+                redisClient.hset('rooms', roomData.ID,roomDataString);
                 let messagesToSend = [];
                 for(var i=0; i<roomData.Messages.length; i++){
                   messagesToSend.push({"user" : roomData.Messages[i].User, "timestamp" : roomData.Messages[i].Timestamp, "message" : roomData.Messages[i].Message});
@@ -1210,7 +1196,7 @@ router.post('/activate/send',  (req,res) => {
         return;
       }
 
-       redisClient.get(email, (err, reply) => {
+       redisClient.hget('users', email, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -1223,7 +1209,7 @@ router.post('/activate/send',  (req,res) => {
 
           let token = crypto.randomBytes(64).toString('hex');
           userData.ActivationToken = token;
-          redisClient.set(email,JSON.stringify(userData));
+          redisClient.hset('users', email,JSON.stringify(userData));
 
           var mailOptions = {
               from: 'yacha ✔ <yacha@gmail.com>', // sender address
@@ -1255,18 +1241,18 @@ router.post('/activate/verify',  (req,res) => {
         return;
       }
       let valid = false;
-       redisClient.keys('*', function(err, keys) {
+       redisClient.hkeys('users', function(err, keys) {
+        console.log(keys);
             async.each(keys, function(key, callback) {
-              redisClient.get(key, function(err, value) {
+              redisClient.hget('users', key, function(err, value) {
                 let userData = JSON.parse(value);
-                if (!userData.NickName){
-                  callback(err);
-                  return;
-                }
+                console.log(userData);
+                console.log(key);
+                
                 if (userData.ActivationToken === token){
                   userData.Activated = true;
                   console.log('siker');
-                  redisClient.set(key,JSON.stringify(userData));
+                  redisClient.hset('users', key,JSON.stringify(userData));
                   valid = true;
                   res.sendStatus(204);
                 }
@@ -1289,7 +1275,7 @@ router.post('/forgot/send',  (req,res) => {
         return;
       }
 
-       redisClient.get(email, (err, reply) => {
+       redisClient.hget('users', email, (err, reply) => {
         if (err){
           res.sendStatus(404);
         }
@@ -1302,7 +1288,7 @@ router.post('/forgot/send',  (req,res) => {
 
           let token = crypto.randomBytes(64).toString('hex');
           userData.ForgotPasswordToken = token;
-          redisClient.set(email,JSON.stringify(userData));
+          redisClient.hset('users', email,JSON.stringify(userData));
 
           var mailOptions = {
               from: 'yacha ✔ <yacha@gmail.com>', // sender address
@@ -1334,22 +1320,19 @@ router.post('/forgot/verify',  (req,res) => {
         return;
       }
       let valid = false;
-       redisClient.keys('*', function(err, keys) {
+       redisClient.hkeys('users', function(err, keys) {
             async.each(keys, function(key, callback) {
-              redisClient.get(key, function(err, value) {
+              redisClient.hget('users', key, function(err, value) {
                 let userData = JSON.parse(value);
-                if (!userData.NickName){
-                  callback(err);
-                  return;
-                }
+                
                 if (userData.ForgotPasswordToken === token){
                   let email = key;
                   let authNumber = crypto.randomBytes(64).toString('hex');
                   userData.AuthNumber=authNumber;
                   let userString = JSON.stringify(userData);
                   console.log(userString);
-                  redisClient.del(email);
-                  redisClient.set(email,userString);
+                  redisClient.hdel('users',email);
+                  redisClient.hset('users', email,userString);
                   res.cookie('AuthNumber', authNumber);
                   let resData = {"username" : email, "nickname" : userData.NickName};
                   res.status(200).send(resData);
