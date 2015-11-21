@@ -47,6 +47,7 @@ let UserId = 'undef';
 if (process.env.REDISCLOUD_URL) {
   let rtg   = url.parse(process.env.REDISCLOUD_URL);
   redisClient = redis.createClient(rtg.port, rtg.hostname, {no_ready_check: true});
+  redisClient.auth(rtg.auth.split(":")[1]);
 } else {
   redisClient = redis.createClient();
 }
@@ -1211,6 +1212,10 @@ router.post('/user/pm/:uid', async (req,res) => {
 
 router.post('/activate/send', async (req,res) => {
       let email = req.body.email;
+      if (!email){
+        res.sendStatus(400);
+        return;
+      }
 
       redisClient.select(0);
        redisClient.get(email, (err, reply) => {
@@ -1253,6 +1258,10 @@ router.post('/activate/send', async (req,res) => {
 
 router.post('/activate/verify', async (req,res) => {
       let token = req.body.token;
+      if (!token){
+        res.sendStatus(400);
+        return;
+      }
       redisClient.select(0);
       let valid = false;
        redisClient.keys('*', function(err, keys) {
@@ -1280,6 +1289,10 @@ router.post('/activate/verify', async (req,res) => {
 
 router.post('/forgot/send', async (req,res) => {
       let email = req.body.email;
+      if (!email){
+        res.sendStatus(400);
+        return;
+      }
 
       redisClient.select(0);
        redisClient.get(email, (err, reply) => {
@@ -1322,6 +1335,10 @@ router.post('/forgot/send', async (req,res) => {
 
 router.post('/forgot/verify', async (req,res) => {
       let token = req.body.token;
+      if (!token){
+        res.sendStatus(400);
+        return;
+      }
       redisClient.select(0);
       let valid = false;
        redisClient.keys('*', function(err, keys) {
