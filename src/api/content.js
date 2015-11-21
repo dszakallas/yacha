@@ -140,7 +140,6 @@ router.post('/login', async (req,res) => {
 
 
 router.post('/register', async (req,res) => {
-
   let nickname = req.body.username;
   let email = req.body.email;
   let pw1 = req.body.password;
@@ -348,8 +347,8 @@ router.delete('/user/rooms/:roomid', async (req,res) => {
               let nAdmins = [];
               for (var i = 0; i < roomData.Admins.length; i++) {
                   if (roomData.Admins[i] != UserId) {
-                    nmembers.push(members[i]);
-                  } 
+                    nAdmins.push(roomData.Admins[i]);
+                  }
                   else{
                     if (roomData.Admins.length === 1){
                       let rescode = {"reason" : 10};
@@ -555,7 +554,7 @@ router.post('/user/admin/rooms', async (req,res) => {
     redisClient.select(1);
     let Name = req.body.name;
     if (!Name){
-      res.sendStatus(404);
+      res.sendStatus(400);
       return;
     }
     let Admins=[UserId];
