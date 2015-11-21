@@ -10,6 +10,8 @@ import socket from './api/socket';
 
 import Html from './components/Html';
 
+import router from './api/content';
+
 const server = global.server = express();
 
 
@@ -25,11 +27,11 @@ server.use(express.static(path.join(__dirname, 'public')));
 //
 // Register API middleware
 // -----------------------------------------------------------------------------
-server.use('/api', require('./api/content'));
+server.use('/api', router);
 
-server.get('*', async (req,res,next) => {
+server.get('*', (req,res,next) => {
   const html = ReactDOM.renderToStaticMarkup(<Html />);
-  res.send('<!doctype html>\n' + html);
+  res.send(html);
 });
 
 //
