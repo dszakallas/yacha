@@ -2,6 +2,8 @@ import React, { PropTypes, Component } from 'react';
 
 import { OverlayTrigger, Popover, Alert } from 'react-bootstrap';
 
+import ApiClient from '../../core/ApiClient';
+
 class SignUpForm extends Component {
 
   constructor() {
@@ -128,15 +130,35 @@ class SignUpForm extends Component {
     )
   }
 
-  submit(e) {
+  async submit(e) {
     e.preventDefault();
     if(this.submitable()) {
-      //TODO
+      try {
+        await ApiClient.registerAndSendActivation(
+          this.state.emailValue,
+          this.state.nicknameValue,
+          this.state.passwordValue
+        );
+        this.setState({ submitted: true });
+      }
+      catch(err) {
+        if(err.register){
+          if(err.register.status === 400) {
+            if(err.register.body.reason === 0) {
+              this.setState({ emailError: "Email already registered" });
+            } else if(err.register.body.reason === 1) {
+              this.setState({ nicknameError: "This nickname is already taken. Choose another" });
+            } else {
+              console.warn(`SignUpForm: server returned ${err}`);
+            }
+          } else {
+            console.warn(`SignUpForm: server returned ${err}`);
+          }
+        } else if(err.activate) {
+          console.warn(`Oups, activation error: ${err}`);
+        }
 
-
-      this.setState({ submitted: true });
-
-
+      }
     }
   }
 
@@ -204,7 +226,7 @@ class SignUpForm extends Component {
             ?
               <Alert bsStyle="info" >
                 <h4>Just one more step!</h4>
-                <p>You sent confirmation email to {this.state.emailValue} which contains a link. Click on that link and you are ready.</p>
+                <p>We sent you a confirmation email to {this.state.emailValue} which contains a link. Click on that link and you are ready.</p>
               </Alert>
             :
               <form className="form-horizontal" onSubmit={this.submit.bind(this)}>
