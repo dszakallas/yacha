@@ -59,6 +59,12 @@ function checkAuthentication (req, res, cb){
     redisClient.hkeys('users', function(err, keys) {
           async.each(keys, function(key, callback) {
             redisClient.hget('users', key, function(err, value) {
+              if (err){
+                console.log("Internal server error");
+                res.sendStatus(500);
+                return;
+              }
+
               let userData = JSON.parse(value);
               if (userData.AuthNumber === randNum){
                 UserId=key;
@@ -114,7 +120,6 @@ router.post('/login',  (req,res) => {
               let authNumber = crypto.randomBytes(64).toString('hex');
               userData.AuthNumber=authNumber;
               let userString = JSON.stringify(userData);
-              console.log(userString);
               redisClient.hdel('users', email);
               redisClient.hset('users',email,userString);
               res.cookie('AuthNumber', authNumber);
@@ -161,12 +166,13 @@ router.post('/register',  (req,res) => {
               if (err){
                 console.log("Internal server error");
                 res.sendStatus(500);
+                return;
               }
               let userData = JSON.parse(value);
 
               if (userData.NickName === nickname){
                 validNickName=false;
-                console.log("/api/retister invalid nickname");
+                console.log("/api/register invalid nickname");
               }
               callback(err);
             });
@@ -255,6 +261,7 @@ router.get('/user/rooms',   (req,res) => {
               if (err){
                 console.log("Internal server error");
                 res.sendStatus(500);
+                return;
               }
               else{
                 let roomDataString=value;
@@ -353,7 +360,6 @@ router.delete('/user/rooms/:roomid',  (req,res) => {
                   }
               }
               roomData.Admins = nAdmins;
-
 
               for (var i = 0; i < members.length; i++) {
                   if (members[i] != UserId) {
@@ -508,6 +514,7 @@ router.get('/user/admin/rooms',  (req,res) => {
               if (err){
                   console.log("Internal server error");
                   res.sendStatus(500);
+                  return;
               }
               else{
                 let roomDataString=value;
@@ -643,7 +650,6 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
       if (reply === 1) {
           redisClient.hexists('rooms',roomid, (err, reply) => {
               if (reply === 1) {
-
                   // setup e-mail data with unicode symbols
                   redisClient.hget('rooms',roomid, (err,reply) => {
                       if (err){
@@ -756,6 +762,7 @@ router.get('/users/search/:keyword',  (req,res) => {
               if (err){
                   console.log("Internal server error");
                   res.sendStatus(500);
+                  return;
               }
               else{
                 let userData = JSON.parse(value);
@@ -788,7 +795,7 @@ router.get('/user/friends',  (req,res) => {
             res.sendStatus(404);
             return;
           }
-          res.send(userData.Friends);
+          res.status(200).send(userData.Friends);
         }
 
     });
@@ -809,7 +816,7 @@ router.get('/user/friends/invite',  (req,res) => {
             res.sendStatus(404);
             return;
           }
-          res.send(userData.FriendInvites);
+          res.status(200).send(userData.FriendInvites);
         }
     });
     console.log('/api/user/friends/invite GET');
@@ -884,7 +891,7 @@ router.get('/user/friends/invite/requests',  (req,res) => {
                 res.sendStatus(404);
                 return;
               }
-              res.send(userData.FriendRequests);
+              res.status(200).send(userData.FriendRequests);
             }
         });
       console.log('/api/user/friends/invite/requests GET');
@@ -1009,6 +1016,7 @@ router.get('/user/pm/:uid',  (req,res) => {
               if (err){
                     console.log("Internal server error");
                     res.sendStatus(500);
+                    return;
               }
               else{
                 let roomDataString=value;
@@ -1221,6 +1229,7 @@ router.post('/activate/verify',  (req,res) => {
         res.sendStatus(400);
         return;
       }
+      
       let valid = false;
        redisClient.hkeys('users', function(err, keys) {
             async.each(keys, function(key, callback) {
