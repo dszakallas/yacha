@@ -52,7 +52,12 @@ if (process.env.REDISCLOUD_URL) {
   redisClient = redis.createClient();
 }
 
-function checkAuthentication (req, res, cb){
+function checkAuthentication (req, res, cb, opts){
+    let options = {
+      invalidate: false
+    };
+    Object.assign(options, opts);
+
     let randNum = req.cookies.AuthNumber;
     UserId = 'undef';
     console.log(randNum);
@@ -70,6 +75,9 @@ function checkAuthentication (req, res, cb){
                 UserId=key;
               }
               callback(err);
+              if(options.invalidate) {
+                delete userData.AuthNumber;
+              }
             });
           }, function() {
               if (UserId != 'undef'){
@@ -88,6 +96,10 @@ function checkAuthentication (req, res, cb){
 
 redisClient.on('connect', () => {
     console.log('REDIS connected');
+});
+
+router.post('/logout',  (req,res) => {
+  checkAuthentication (req, res, (req, res) => { res.sendStatus(204); }, {invalidate: true});
 });
 
 router.post('/login',  (req,res) => {
@@ -523,7 +535,7 @@ router.get('/user/admin/rooms',  (req,res) => {
                   res.sendStatus(404);
                   return;
                 }
-                
+
                 let admins = roomData.Admins;
                 for (var j = 0; j < admins.length; j++) {
                     if (admins[j] === UserId) {
@@ -1229,7 +1241,7 @@ router.post('/activate/verify',  (req,res) => {
         res.sendStatus(400);
         return;
       }
-      
+
       let valid = false;
        redisClient.hkeys('users', function(err, keys) {
             async.each(keys, function(key, callback) {
