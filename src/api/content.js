@@ -76,8 +76,7 @@ function checkAuthentication (req, res, cb, opts){
                   userData.AuthNumber = '';
                   redisClient.hset('users',key,JSON.stringify(userData));
                 }
-                else
-                  UserId=key;
+                UserId=key;
               }
               callback(err);
               if(options.invalidate) {
