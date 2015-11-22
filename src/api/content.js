@@ -59,7 +59,7 @@ function checkAuthentication (req, res, cb, opts){
     Object.assign(options, opts);
 
     let randNum = req.cookies.AuthNumber;
-    UserId = 'undef';
+    UserId = '';
     console.log(randNum);
     redisClient.hkeys('users', function(err, keys) {
           async.each(keys, function(key, callback) {
@@ -72,7 +72,12 @@ function checkAuthentication (req, res, cb, opts){
 
               let userData = JSON.parse(value);
               if (userData.AuthNumber === randNum){
-                UserId=key;
+                if (options.invalidate){
+                  userData.AuthNumber = '';
+                  redisClient.hset('users',key,JSON.stringify(userData));
+                }
+                else
+                  UserId=key;
               }
               callback(err);
               if(options.invalidate) {
@@ -80,7 +85,7 @@ function checkAuthentication (req, res, cb, opts){
               }
             });
           }, function() {
-              if (UserId != 'undef'){
+              if (UserId != ''){
                 console.log('The user is authenticated');
                 cb(req,res);
               }
