@@ -811,7 +811,10 @@ router.get('/user/friends',  (req,res) => {
             res.sendStatus(404);
             return;
           }
-          res.status(200).send(userData.Friends);
+          if (userData.Friends)
+            res.status(200).send(userData.Friends);
+          else
+            res.status(200).send([]);
         }
 
     });
@@ -832,7 +835,11 @@ router.get('/user/friends/invite',  (req,res) => {
             res.sendStatus(404);
             return;
           }
-          res.status(200).send(userData.FriendInvites);
+          if (userData.FriendInvites)
+            res.status(200).send(userData.FriendInvites);
+          else
+            res.status(200).send([]);
+
         }
     });
     console.log('/api/user/friends/invite GET');
@@ -907,7 +914,11 @@ router.get('/user/friends/invite/requests',  (req,res) => {
                 res.sendStatus(404);
                 return;
               }
-              res.status(200).send(userData.FriendRequests);
+              if (userData.FriendRequests)
+                res.status(200).send(userData.FriendRequests);
+              else
+                res.status(200).send([]);
+
             }
         });
       console.log('/api/user/friends/invite/requests GET');
