@@ -674,7 +674,7 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
                               return console.log(error);
                           }
                           console.log('Message sent: ' + info.response);
-                          res.sendStatus(200);
+                          res.sendStatus(204);
 
                   });
                 });
