@@ -73,15 +73,15 @@ function checkAuthentication (req, res, cb, opts){
               let userData = JSON.parse(value);
               if (userData.AuthNumber === randNum){
                 if (options.invalidate){
+                  res.clearCookie('AuthNumber');
                   userData.AuthNumber = '';
                   redisClient.hset('users',key,JSON.stringify(userData));
+                } else {
+                  res.cookie('AuthNumber', userData.AuthNumber);
                 }
                 UserId=key;
               }
               callback(err);
-              if(options.invalidate) {
-                delete userData.AuthNumber;
-              }
             });
           }, function() {
               if (UserId != ''){
@@ -1355,6 +1355,7 @@ router.post('/forgot/verify',  (req,res) => {
               });
             }, function() {
               if (valid === false)
+                console.log("Forgot/Verify invalid token");
                 res.sendStatus(400);
             });
       });
