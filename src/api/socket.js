@@ -2,10 +2,10 @@
 import  content from'./content';
 let redisClient = content.redisClient;
 
-exports = module.exports = function(io){
-  io.sockets.on('connection', function (socket) {
+exports = module.exports = (io) => {
+  io.sockets.on('connection',  (socket) => {
     // when the client emits 'enterRoom', this listens and executes
-    socket.on('enterRoom', function(data){
+    socket.on('enterRoom', (data) => {
       // store the room name in the socket session for this client
       socket.room = data.room;
       socket.join(room);
@@ -14,7 +14,7 @@ exports = module.exports = function(io){
     });
 
     // when the client emits 'sendchat', this listens and executes
-    socket.on('sendchat', function (data) {
+    socket.on('sendchat', (data) => {
         let roomid = socket.room;
         let msg = data.message;
         let UserId = data.username;
@@ -70,7 +70,7 @@ exports = module.exports = function(io){
       
     });
 
-    socket.on('switchRoom', function(data){
+    socket.on('switchRoom', (data) => {
       // leave the current room (stored in session)
       socket.broadcast.to(socket.room).emit('userLeftRoom', data);
       socket.leave(socket.room);
@@ -81,7 +81,7 @@ exports = module.exports = function(io){
     });
 
     // when the user disconnects.. perform this
-    socket.on('disconnect', function(){
+    socket.on('disconnect', () => {
        // leave the current room (stored in session)
       socket.broadcast.to(socket.room).emit('userLeftRoom', data);
       socket.leave(socket.room);
