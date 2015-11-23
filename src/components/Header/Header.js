@@ -34,7 +34,7 @@ class Header extends Component {
     return (
       <div className="header">
         { this.props.user ? this.appNav.call(this) : this.gateNav.call(this) }
-        <h3 className="text-muted">Yacha</h3>
+        <h3 className="text-muted"><Link to={`/home`}>Yacha</Link></h3>
       </div>
     );
   }
