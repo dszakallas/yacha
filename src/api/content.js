@@ -60,7 +60,6 @@ function checkAuthentication (req, res, cb, opts){
 
     let randNum = req.cookies.AuthNumber;
     UserId = '';
-    console.log(randNum);
     redisClient.hkeys('users', function(err, keys) {
           async.each(keys, function(key, callback) {
             redisClient.hget('users', key, function(err, value) {
@@ -200,12 +199,75 @@ router.post('/register',  (req,res) => {
               else{
                 let newuser = { "Email" : email, "NickName" : nickname, "Password" : pwhash };
                 let newuserstring = JSON.stringify(newuser);
-                redisClient.hset('users', email,newuserstring);
-                res.sendStatus(204);
-              }
-          });
-        });
-    }
+
+                //JOIN TO global
+
+                let globalExists = false;
+                let globalKey = '';
+                redisClient.hkeys('rooms', function(err, keys) {
+                  async.each(keys, function(key, callback) {
+                    redisClient.hget('rooms',key, function(err, value) {
+                      if (err){
+                        console.log("Internal server error");
+                        res.sendStatus(500);
+                        return;
+                      }
+                      let roomData = JSON.parse(value);
+
+                      if (roomData.Name === 'global'){
+                        globalExists=true;
+                        globalKey = key;
+                        console.log("Global room exists");
+                      }
+                      callback(err);
+                    });
+                  }, function() {
+                      if (globalExists === false){
+                        let Name = 'global';
+                        let Admins=[];
+                        let Messages = [];
+                        let Private = false;
+                        let Members = [email];
+                        let ID = crypto.randomBytes(64).toString('hex');
+                        let nroom = {"Name" : Name, "Admins" : Admins, "Messages" : Messages, "Private" : Private, "ID": ID, "Members" : Members};
+                        let nroomstring = JSON.stringify(nroom);
+                        redisClient.hset('rooms', ID,nroomstring);
+                        redisClient.hset('users', email, newuserstring);
+                        res.sendStatus(204);
+                        
+                      }
+                      else{
+                        redisClient.hget('rooms',globalKey, (err, reply) => {
+                                if (err){
+                                    console.log("Internal server error");
+                                    res.sendStatus(500);
+                                }
+                                else{
+                                  let roomDataString = reply;
+                                  let roomData = JSON.parse(roomDataString);
+                                  if (roomData === null){
+                                    res.sendStatus(404);
+                                    return;
+                                  }
+                                  roomData.Members.push(email);
+                                  roomDataString = JSON.stringify(roomData);
+                                  redisClient.hset('rooms', globalKey, roomDataString);
+                                  redisClient.hset('users', email, newuserstring);
+                                  res.sendStatus(204);
+                                }
+                        });
+                        
+                      }
+                  });
+            });
+
+            
+          }
+
+        }); 
+    });
+   }     
+  
   });
   console.log('/api/register');
 });
