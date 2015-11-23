@@ -8,6 +8,46 @@ function apiUrl(path) {
 
 const ApiClient = {
 
+  rooms: () => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl('/user/rooms'))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  createRoom: (id) => new Promise((resolve, reject) => {
+    request
+      .post(apiUrl('/user/admin/rooms'))
+      .send({id: id})
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  friends: () => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl('/user/friends'))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
   login: (email, password) => new Promise((resolve, reject) => {
     request
       .post(apiUrl('/login'))
@@ -44,11 +84,48 @@ const ApiClient = {
                 });
               } else {
                 resolve({
-                  register: res,
-                  activate: activateRes
+                  register: res.body,
+                  activate: activateRes.body
                 });
               }
             });
+        }
+      });
+  }),
+
+  logout: () => new Promise((resolve, reject) => {
+    request
+      .post(apiUrl('/logout'))
+      .end((err, res) => {
+        if(err)
+          reject(res);
+        else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  user: () => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl('/user'))
+      .end((err, res) => {
+        if(err)
+          reject(res);
+        else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  sendForgot: (email) => new Promise((resolve, reject) => {
+    request
+      .post(apiUrl('/forgot/send'))
+      .send({email: email})
+      .end((err, res) => {
+        if(err)
+          reject(res);
+        else {
+          resolve(res.body);
         }
       });
   }),

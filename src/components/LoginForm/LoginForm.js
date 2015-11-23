@@ -28,7 +28,8 @@ class LoginForm extends Component {
       console.log("submitting form");
       try {
         const response = await ApiClient.login(this.state.email, this.state.password);
-        history.pushState('/home');
+        console.log("navigating...");
+        this.props.history.replaceState(null, '/home');
       } catch(err) {
         if(err.status === 401) {
           this.setState({ error: 'Invalid email or password' });

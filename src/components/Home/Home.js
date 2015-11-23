@@ -1,0 +1,149 @@
+import React, { Component } from 'react';
+
+class Home extends Component {
+
+  constructor() {
+    super();
+
+    this.state = {
+      rooms: [],
+      friends: [],
+
+      createRoomModalOpen: false,
+      createRoomNameInputRoomName: '',
+
+      addFriendModalOpen: false
+
+    }
+  }
+
+  async loadStateFromServer() {
+    let rooms, friends;
+    try {
+      rooms = await ApiClient.rooms();
+      friends = await ApiClient.friends();
+      this.setState({rooms: rooms, friends: friends});
+    } catch (err) {
+      console.warn(`Home error ${err}`);
+    }
+
+  }
+
+  componentDidMount() {
+    this.loadStateFromServer.call(this);
+    setInterval(this.loadStateFromServer.bind(this), 30000);
+  }
+
+  createRoomModalOpen() {
+    this.setState({ createRoomModalOpen: true });
+  }
+
+  createRoomModalClose() {
+    this.setState({ createRoomModalOpen: false, createRoomNameInputRoomName: '' });
+  }
+
+  async createRoom() {
+    let room;
+    try {
+      room = await ApiClient.createRoom(this.state.createRoomNameInputRoomName);
+      let new_ = this.state.rooms;
+      new_.push(room);
+      this.setState({ rooms: new_ });
+    } catch(err) {
+      console.warn(`Home: Server returned ${err}`);
+    }
+    this.createRoomModalClose.call(this);
+
+  }
+
+
+
+  render() {
+    let rooms = this.state.rooms.map((room) => {
+      return(
+        <tr>
+          <td>room.name</td>
+          { room.admin ? <td><span class="glyphicon glyphicon-star" aria-hidden="true"></span></td> : <td></td> }
+        </tr>
+      );
+    });
+
+    let friends = this.state.friends.map((friend) => {
+      return(
+        <tr>
+          <td>friend.nickname</td>
+        </tr>
+      );
+    });
+
+    return (
+      <div className="row">
+        <div className="col-xs-12 col-md-6">
+          <div className="row">
+            <div className="col-xs-6">
+              <h1>Online friends</h1>
+            </div>
+            <div className="col-xs-6 table-ops">
+              <h1 className="btn btn-default"><span className="glyphicon glyphicon-plus" aria-hidden="true"></span></h1>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-xs-12">
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <tbody>
+                    { rooms }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xs-12 col-md-6">
+          <div className="row">
+            <div className="col-xs-6">
+              <h1>Rooms</h1>
+            </div>
+            <div className="col-xs-6 table-ops">
+              <h1 className="btn btn-default" onClick={this.createRoomModalOpen.bind(this)}><span className="glyphicon glyphicon-plus" aria-hidden="true"></span></h1>
+            </div>
+          </div>
+          <div className="row">
+            <div className="col-xs-12">
+            <div className="table-responsive">
+              <table className="table table-striped">
+                <tbody>
+                { friends }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Create a new room</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <h4>Enter a name for the room</h4>
+            <label htmlFor="createRoomInputRoomName" className="sr-only">Room name</label>
+            <input
+              type="text"
+              className="form-control"
+              id="createRoomInputRoomName"
+              placeholder="Room name"
+              value={this.state.createRoomNameInputRoomName}
+              onChange={(e) => this.setState({ createRoomNameInputRoomName: e.target.value})} />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
+            <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
+          </Modal.Footer>
+        </Modal>
+    </div>
+    );
+  }
+}
+
+export default Home;
