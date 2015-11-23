@@ -14,7 +14,7 @@ class GatePage extends Component {
       <div className="row">
         <div className="col-xs-12 col-md-4">
            <div className="gate-login">
-            <LoginForm history={this.props.history} />
+            <LoginForm login={this.props.login} />
            </div>
         </div>
         <div className="col-xs-12 col-md-8">

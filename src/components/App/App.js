@@ -16,6 +16,19 @@ import ApiClient from '../../core/ApiClient';
 import Header from '../Header';
 import Footer from '../Footer';
 
+const Layout = React.createClass({
+  render: function(){
+    console.log(this.props.logout);
+    return (
+
+      <div>
+        <Header {...this.props} />
+        {this.props.children}
+        <Footer />
+      </div>
+    );
+  }
+});
 
 @withStyles(styles)
 class App extends Component {
@@ -23,7 +36,17 @@ class App extends Component {
   constructor() {
     super();
 
-    this.state = {};
+    this.state = {
+    };
+
+  }
+
+  static defaultProps = {
+    history: createBrowserHistory()
+  }
+
+  componentDidMount() {
+    console.log(this.state);
 
     ApiClient.user().then(
       (user) => {
@@ -45,27 +68,46 @@ class App extends Component {
     }
   }
 
+  login(email, password) {
+    ApiClient.login(email, password).then(
+      (user) => {
+        console.log(`${user.nickname} logged in`);
+        this.setState({ user: user});
+        this.props.history.replaceState(null, "/home");
+      },
+      (err) => {
+        if(err.status === 401) {
+          console.log("No user authenticated for this agent");
+        } else {
+          console.warn(`AppRouter: Server returned error ${err}`);
+        }
+      });
+
+  }
+
+  logout() {
+    ApiClient.logout().then(
+      () => {
+        console.log(`${this.state.user.nickname} logged out`);
+        this.setState({ user: null });
+        this.props.history.replaceState(null, "/gate");
+      },
+      (err) => {
+        console.warn(`Couldnt log out user`);
+    });
+  }
 
   render() {
-    let history = createBrowserHistory();
-    let app = this;
-    const Layout = React.createClass({
-      render: function(){
-        return (
-          <div>
-            <Header user={ app.state.user ? app.state.user : null } history={this.props.history}/>
-            {this.props.children}
-            <Footer />
-          </div>
-        );
-      }
-    });
+    function createElement(Component, props) {
+      // make sure you pass all the props in!
+      return <Component {...props} user={this.state.user} logout={this.logout.bind(this)} login={this.login.bind(this)} />
+    }
     return (
       <div className="container">
-        <Router history={history}>
+        <Router history={this.props.history} createElement={createElement.bind(this)}>
           <Route path="/" component={Layout} >
-            <IndexRoute component={Home} />
-            <Route path="home" component={Home} />
+            <IndexRoute component={Home} onEnter={this.enterHome.bind(this)}/>
+            <Route path="home" component={Home} onEnter={this.enterHome.bind(this)}/>
             <Route path="gate" component={GatePage}>
               <IndexRoute component={Marketing} />
               <Route path="verify/:token/(:forgot)" component={Verify} />
