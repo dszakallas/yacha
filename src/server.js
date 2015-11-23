@@ -6,11 +6,12 @@ import express from 'express';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
 import io from 'socket.io';
+import socket from './api/socket';
 
 import Html from './components/Html';
 
 const server = global.server = express();
-let socket = require('./api/socket');
+
 
 
 

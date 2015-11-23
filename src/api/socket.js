@@ -1,5 +1,5 @@
 
-var content = require('./content');
+import  content from'./content';
 let redisClient = content.redisClient;
 
 exports = module.exports = function(io){
@@ -19,19 +19,19 @@ exports = module.exports = function(io){
         let msg = data.message;
         let UserId = data.username;
         if (!msg || !roomid){
-          res.sendStatus(400);
+          //res.sendStatus(400);
           return;
         }
         redisClient.hget('rooms',roomid, (err, reply) => {
                 if (err){
                     console.log("Internal server error");
-                    res.sendStatus(500);
+                    //res.sendStatus(500);
                 }
                 else{
                   let roomDataString = reply;
                   let roomData = JSON.parse(roomDataString);
                   if (roomData === null){
-                    res.sendStatus(404);
+                    //res.sendStatus(404);
                     return;
                   }
                   let member = false;
@@ -63,7 +63,7 @@ exports = module.exports = function(io){
                     socket.broadcast.to(socket.room).emit('updatechat', messagesToSend);
                   }
                   else{
-                    res.sendStatus(204);
+                    //res.sendStatus(204);
                   }
                 }
       });
