@@ -4,11 +4,10 @@ let redisClient = content.redisClient;
 
 exports = module.exports = function(io){
   io.sockets.on('connection', function (socket) {
-    // when the client emits 'adduser', this listens and executes
+    // when the client emits 'enterRoom', this listens and executes
     socket.on('enterRoom', function(data){
       // store the room name in the socket session for this client
       socket.room = data.room;
-      // add the client's username to the global list
       socket.join(room);
       // echo to client they've connected
       socket.broadcast.to(room).emit('userJoined',data);
