@@ -5,10 +5,14 @@ import path from 'path';
 import express from 'express';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
+import io from 'socket.io';
 
 import Html from './components/Html';
 
 const server = global.server = express();
+let socket = require('./api/socket');
+
+
 
 server.set('port', (process.env.PORT || 5000));
 
@@ -31,10 +35,12 @@ server.get('*', async (req,res,next) => {
 // Launch the server
 // -----------------------------------------------------------------------------
 
-server.listen(server.get('port'), () => {
+let httpserver = server.listen(server.get('port'), () => {
   /* eslint-disable no-console */
   console.log('The server is running at http://localhost:' + server.get('port'));
   if (process.send) {
     process.send('online');
   }
 });
+
+socket(io.listen(httpserver));

@@ -71,7 +71,7 @@ function checkAuthentication (req, res, cb, opts){
               }
 
               let userData = JSON.parse(value);
-              if (userData.AuthNumber === randNum){
+              if (userData.AuthNumber === randNum && userData.AuthNumber){
                 if (options.invalidate){
                   res.clearCookie('AuthNumber');
                   userData.AuthNumber = '';
@@ -1371,3 +1371,4 @@ router.post('/forgot/verify',  (req,res) => {
 });
 
 export default router;
+exports.redisClient = redisClient;
