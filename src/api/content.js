@@ -562,11 +562,6 @@ router.get('/user/admin/rooms',  (req,res) => {
 router.post('/user/admin/rooms',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let Name = req.body.name;
-    if (err){
-        console.log("Internal server error");
-        res.sendStatus(500);
-        return;
-    }
     let Admins=[UserId];
     let Messages = [];
     let Private = false;
