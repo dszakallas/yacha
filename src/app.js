@@ -7,7 +7,7 @@ import FastClick from 'fastclick';
 import { Router, Route, Link, IndexRoute } from 'react-router';
 import Location from './core/Location';
 
-import AppRouter from './components/AppRouter';
+import App from './components/App';
 
 import { addEventListener, removeEventListener } from './utils/DOMUtils';
 
@@ -31,7 +31,7 @@ const context = {
 };
 
 function render(state) {
-  ReactDOM.render(<AppRouter />, appContainer, () => {
+  ReactDOM.render(<App />, appContainer, () => {
     // Restore the scroll position if it was saved into the state
     if (state.scrollY !== undefined) {
       window.scrollTo(state.scrollX, state.scrollY);
