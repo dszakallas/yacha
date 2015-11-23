@@ -286,7 +286,7 @@ router.get('/user/rooms',   (req,res) => {
 
                 for (var j = 0; j < members.length; j++) {
                     if (members[j] === UserId) {
-                        let resData = {"id" : key, "name" : roomData.Name};
+                        let resData = {"id" : key, "name" : roomData.Name, "private" : roomData.Private};
 
                         for (var k=0; k<roomData.Admins.length; k++){
                           if (roomData.Admins[k] === UserId)
@@ -543,7 +543,7 @@ router.get('/user/admin/rooms',  (req,res) => {
                 let admins = roomData.Admins;
                 for (var j = 0; j < admins.length; j++) {
                     if (admins[j] === UserId) {
-                        let resData = {"id" : key, "name" : roomData.Name, "admin" : true};
+                        let resData = {"id" : key, "name" : roomData.Name, "admin" : true, "private" : roomData.Private};
                         rooms.push(resData);
                     }
                 }
@@ -1337,15 +1337,22 @@ router.post('/forgot/verify',  (req,res) => {
        redisClient.hkeys('users', function(err, keys) {
             async.each(keys, function(key, callback) {
               redisClient.hget('users', key, function(err, value) {
+                if (err){
+                      console.log("Internal server error");
+                      res.sendStatus(500);
+                }
+
                 let userData = JSON.parse(value);
 
                 if (userData.ForgotPasswordToken === token){
                   let email = key;
                   let authNumber = crypto.randomBytes(64).toString('hex');
                   userData.AuthNumber=authNumber;
+                  userData.ForgotPasswordToken = undefined;
                   let userString = JSON.stringify(userData);
                   redisClient.hdel('users',email);
                   redisClient.hset('users', email,userString);
+                  res.clearCookie('AuthNumber');
                   res.cookie('AuthNumber', authNumber);
                   let resData = {"username" : email, "nickname" : userData.NickName};
                   res.status(200).send(resData);
@@ -1354,9 +1361,10 @@ router.post('/forgot/verify',  (req,res) => {
                 callback(err);
               });
             }, function() {
-              if (valid === false)
+              if (valid === false){
                 console.log("Forgot/Verify invalid token");
                 res.sendStatus(400);
+              }
             });
       });
       console.log('/api/forgot/verify post');
