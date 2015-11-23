@@ -562,6 +562,10 @@ router.get('/user/admin/rooms',  (req,res) => {
 router.post('/user/admin/rooms',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let Name = req.body.name;
+    if (!Name){
+      res.sendStatus(400);
+      return;
+    }
     let Admins=[UserId];
     let Messages = [];
     let Private = false;
