@@ -24,7 +24,7 @@ const ApiClient = {
   createRoom: (id) => new Promise((resolve, reject) => {
     request
       .post(apiUrl('/user/admin/rooms'))
-      .send({id: id})
+      .send({name: name})
       /*.accept('application/json')*/
       .end((err, res) => {
         if (err) {

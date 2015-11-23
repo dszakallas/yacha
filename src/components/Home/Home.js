@@ -1,9 +1,13 @@
 import React, { Component } from 'react';
 
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, Dropdown } from 'react-bootstrap';
 
 import ApiClient from '../../core/ApiClient';
 
+import withStyles from '../../decorators/withStyles';
+import styles from './Home.less';
+
+@withStyles(styles)
 class Home extends Component {
 
   constructor() {
@@ -60,6 +64,36 @@ class Home extends Component {
 
   }
 
+  renderSearch() {
+    return (
+      <div className="row">
+       <div className="col-xs-12">
+         <Dropdown id="search-dropdown">
+            <div className="input-group" bsRole="toggle">
+              <input
+                type="text"
+                className="form-control"
+                aria-label="..."
+                aria-haspopup="true"
+                aria-expanded="false"
+                placeholder="Find users..."></input>
+              <div className="input-group-addon">
+                <span className="glyphicon glyphicon-search"></span>
+              </div>
+            </div>
+            <ul bsRole="menu" className="dropdown-menu search-dropdown">
+              <li><a href="#">Action</a></li>
+              <li><a href="#">Another action</a></li>
+              <li><a href="#">Something else here</a></li>
+              <li role="separator" className="divider"></li>
+              <li><a href="#">Separated link</a></li>
+            </ul>
+          </Dropdown>
+        </div>
+      </div>
+    );
+  }
+
 
 
   render() {
@@ -81,6 +115,8 @@ class Home extends Component {
     });
 
     return (
+    <div>
+      {this.renderSearch.call(this)}
       <div className="row">
         <div className="col-xs-12 col-md-6">
           <div className="row">
@@ -125,6 +161,27 @@ class Home extends Component {
           </div>
         </div>
       </div>
+    </div>
+    <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create a new room</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <h4>Enter a name for the room</h4>
+          <label htmlFor="createRoomInputRoomName" className="sr-only">Room name</label>
+          <input
+            type="text"
+            className="form-control"
+            id="createRoomInputRoomName"
+            placeholder="Room name"
+            value={this.state.createRoomNameInputRoomName}
+            onChange={(e) => this.setState({ createRoomNameInputRoomName: e.target.value})} />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
+          <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
+        </Modal.Footer>
+      </Modal>
       <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
           <Modal.Header closeButton>
             <Modal.Title>Create a new room</Modal.Title>
@@ -145,27 +202,7 @@ class Home extends Component {
             <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
           </Modal.Footer>
         </Modal>
-        <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Create a new room</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <h4>Enter a name for the room</h4>
-              <label htmlFor="createRoomInputRoomName" className="sr-only">Room name</label>
-              <input
-                type="text"
-                className="form-control"
-                id="createRoomInputRoomName"
-                placeholder="Room name"
-                value={this.state.createRoomNameInputRoomName}
-                onChange={(e) => this.setState({ createRoomNameInputRoomName: e.target.value})} />
-            </Modal.Body>
-            <Modal.Footer>
-              <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
-              <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
-            </Modal.Footer>
-          </Modal>
-    </div>
+      </div>
     );
   }
 }
