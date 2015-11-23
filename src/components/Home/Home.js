@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
 
+import { Modal, Button } from 'react-bootstrap';
+
+import ApiClient from '../../core/ApiClient';
+
 class Home extends Component {
 
   constructor() {
@@ -141,6 +145,26 @@ class Home extends Component {
             <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
           </Modal.Footer>
         </Modal>
+        <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Create a new room</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <h4>Enter a name for the room</h4>
+              <label htmlFor="createRoomInputRoomName" className="sr-only">Room name</label>
+              <input
+                type="text"
+                className="form-control"
+                id="createRoomInputRoomName"
+                placeholder="Room name"
+                value={this.state.createRoomNameInputRoomName}
+                onChange={(e) => this.setState({ createRoomNameInputRoomName: e.target.value})} />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
+              <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
+            </Modal.Footer>
+          </Modal>
     </div>
     );
   }
