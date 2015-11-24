@@ -736,11 +736,10 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
                       }
                       let roomData = JSON.parse(reply);
                       var mailOptions = {
-                          from: 'yacha ✔ <ggergo91@gmail.com>', // sender address
+                          from: 'yacha ✔ <yacha@yachamail.com>', // sender address
                           to: uname, // list of receivers
-                          subject: 'Hello ✔', // Subject line
-                          text: 'Hello \n' + UserId + 'Invited you to a room ' + roomData.Name+ '\n, to join please click on this link: ' + 'http://localhost:5000/api/valafdmi' +
-                          'majd ide megy a link a szoba azonosítojával a frontendre' // plaintext body
+                          subject: 'Yacha chat room invitation', // Subject line
+                          text: 'Dear Yacha User,\nYou were invite to ' + roomData.Name + ' room.\nThe room id is: ' + roomid + ' .'   
 
                       };
 
