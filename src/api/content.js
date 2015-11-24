@@ -397,7 +397,7 @@ router.get('/user/rooms/:roomid',  (req,res) => {
                 res.status(200).send(rData);
               }
               else{
-                res.sendStatus(204);
+                res.sendStatus(403);
 
               }
 
@@ -517,7 +517,7 @@ router.get('/user/rooms/:roomid/messages',  (req,res) => {
                 res.status(200).send(messages);
               }
               else{
-                res.sendStatus(204);
+                res.sendStatus(403);
               }
             }
     });
@@ -575,7 +575,7 @@ router.post('/user/rooms/:roomid/messages',  (req,res) => {
                 res.status(200).send(messagesToSend);
               }
               else{
-                res.sendStatus(204);
+                res.sendStatus(403);
               }
             }
     });
@@ -666,7 +666,7 @@ router.get('/user/admin/rooms/:roomid',  (req,res) => {
                 res.status(200).send(rData);
               }
               else{
-                res.sendStatus(204);
+                res.sendStatus(403);
               }
 
             }
@@ -710,7 +710,7 @@ router.put('/user/admin/rooms/:roomid',  (req,res) => {
                 res.status(200).send({"name" : roomName, "members" : members, "private" : pv});
               }
               else{
-                res.sendStatus(204);
+                res.sendStatus(403);
               }
             }
     });
@@ -807,7 +807,7 @@ router.delete('/user/admin/rooms/:roomid',  (req,res) => {
                 res.sendStatus(204);
               }
               else{
-                res.sendStatus(204);
+                res.sendStatus(403);
               }
             }
     });
