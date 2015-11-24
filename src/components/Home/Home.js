@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 
 import { Modal, Button, Dropdown } from 'react-bootstrap';
 
+
+import { Link } from 'react-router';
+
 import ApiClient from '../../core/ApiClient';
 
 import withStyles from '../../decorators/withStyles';
@@ -18,7 +21,7 @@ class Home extends Component {
       friends: [],
 
       createRoomModalOpen: false,
-      createRoomNameInputRoomName: '',
+      createRoomNameInput: '',
 
       addFriendModalOpen: false
 
@@ -47,13 +50,13 @@ class Home extends Component {
   }
 
   createRoomModalClose() {
-    this.setState({ createRoomModalOpen: false, createRoomNameInputRoomName: '' });
+    this.setState({ createRoomModalOpen: false, createRoomNameInput: '' });
   }
 
   async createRoom() {
     let room;
     try {
-      room = await ApiClient.createRoom(this.state.createRoomNameInputRoomName);
+      room = await ApiClient.createRoom(this.state.createRoomNameInput);
       let new_ = this.state.rooms;
       new_.push(room);
       this.setState({ rooms: new_ });
@@ -99,9 +102,9 @@ class Home extends Component {
   render() {
     let rooms = this.state.rooms.map((room) => {
       return(
-        <tr>
-          <td>room.name</td>
-          { room.admin ? <td><span class="glyphicon glyphicon-star" aria-hidden="true"></span></td> : <td></td> }
+        <tr key={room.id} >
+          <td><Link to={`/home/chat/${room.id}`}>{room.name}</Link></td>
+          { room.admin ? <td><span className="glyphicon glyphicon-star" aria-hidden="true"></span></td> : null }
         </tr>
       );
     });
@@ -131,8 +134,10 @@ class Home extends Component {
             <div className="col-xs-12">
               <div className="table-responsive">
                 <table className="table table-striped">
+                  <thead>
+                  </thead>
                   <tbody>
-                    { rooms }
+                  { friends }
                   </tbody>
                 </table>
               </div>
@@ -153,8 +158,15 @@ class Home extends Component {
             <div className="col-xs-12">
             <div className="table-responsive">
               <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th className="col-sm-10"></th>
+                    <th className="col-sm-1"></th>
+                    <th className="col-sm-1"></th>
+                  </tr>
+                </thead>
                 <tbody>
-                { friends }
+                { rooms }
                 </tbody>
               </table>
             </div>

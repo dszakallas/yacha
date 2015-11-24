@@ -3,7 +3,7 @@ import { Alert } from 'react-bootstrap';
 import { Link } from 'react-router';
 import ApiClient from '../../core/ApiClient';
 
-export class Forgot extends Component {
+class Forgot extends Component {
 
   constructor() {
     super();
@@ -83,66 +83,4 @@ export class Forgot extends Component {
   }
 }
 
-export class Verify extends Component {
-
-  constructor() {
-    super();
-
-    this.state = {
-      submitted: false,
-      error: false
-    };
-  }
-
-  async verify() {
-    const forgot = this.props.params.forgot ? true : false;
-
-    if(!this.props.params.token) {
-      this.setState({ submitted:true, error: true });
-    } else {
-      try {
-        console.log(`Verify: sending token`);
-        const resp = await ApiClient.verify(forgot, this.props.params.token);
-        if(forgot)
-          this.props.history.pushState('/home');
-      } catch (err) {
-        console.warn(`Verify: server returned error: ${err}`);
-        this.setState({ submitted: true, error: true });
-      }
-    }
-  }
-
-  render() {
-    return (
-      <div>
-        <div className="row">
-          <div className="col-xs-12">
-            <h1>Verification</h1>
-          </div>
-        </div>
-        <div className="row">
-          {
-            this.state.submitted
-              ?
-                this.state.error
-                  ?
-                    <Alert bsStyle="danger" >
-                      <h4><span className="glyphicon glyphicon-remove" aria-hidden="true"></span>Verification failed</h4>
-                      <p>Could not verify that email address. You should try again <Link to='gate/forgot'>here</Link>.</p>
-                    </Alert>
-                  :
-                    <Alert bsStyle="success" >
-                      <h4><span className="glyphicon glyphicon-ok" aria-hidden="true"></span>Verification successful</h4>
-                      <p>You may log in now.</p>
-                    </Alert>
-              :
-              <Alert bsStyle="info" onLoad={this.verify.bind(this)}>
-                <h4><span className="glyphicon glyphicon-ok" aria-hidden="true"></span>Verifying</h4>
-                <p>Please wait... </p>
-              </Alert>
-          }
-        </div>
-      </div>
-    );
-  }
-}
+export default Forgot;

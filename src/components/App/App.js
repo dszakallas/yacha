@@ -8,7 +8,8 @@ import createBrowserHistory from 'history/lib/createBrowserHistory'
 import GatePage from '../GatePage';
 import Marketing from '../Marketing';
 import SignUp from '../SignUp';
-import { Forgot, Verify } from '../Activation';
+import Verify from '../Verify';
+import Forgot from '../Forgot';
 import Home from '../Home';
 
 import ApiClient from '../../core/ApiClient';
@@ -46,7 +47,6 @@ class App extends Component {
   }
 
   componentDidMount() {
-    console.log(this.state);
 
     ApiClient.user().then(
       (user) => {
@@ -63,38 +63,32 @@ class App extends Component {
   }
 
   enterHome(nextState, replaceState) {
-    if(!this.state.user) {
+    /*if(!this.state.user) {
       replaceState({ nextPathname: nextState.location.pathname }, '/gate');
+    }*/
+  }
+
+  async login(email, password) {
+    const user = await ApiClient.login(email, password);
+    console.log(`${user.nickname} logged in`);
+    this.setState({ user: user});
+    this.props.history.replaceState(null, "/home");
+    return user;
+  }
+
+  async verify(forgot, token) {
+    console.log(`Verify: sending token`);
+    const resp = await ApiClient.verify(forgot, token);
+    if(forgot) {
+      this.props.history.replaceState({ annoy: reset}, '/home');
     }
   }
 
-  login(email, password) {
-    ApiClient.login(email, password).then(
-      (user) => {
-        console.log(`${user.nickname} logged in`);
-        this.setState({ user: user});
-        this.props.history.replaceState(null, "/home");
-      },
-      (err) => {
-        if(err.status === 401) {
-          console.log("No user authenticated for this agent");
-        } else {
-          console.warn(`AppRouter: Server returned error ${err}`);
-        }
-      });
-
-  }
-
-  logout() {
-    ApiClient.logout().then(
-      () => {
-        console.log(`${this.state.user.nickname} logged out`);
-        this.setState({ user: null });
-        this.props.history.replaceState(null, "/gate");
-      },
-      (err) => {
-        console.warn(`Couldnt log out user`);
-    });
+  async logout() {
+    await ApiClient.logout();
+    console.log(`${this.state.user.nickname} logged out`);
+    this.setState({ user: null });
+    this.props.history.replaceState(null, "/gate");
   }
 
   render() {
@@ -103,14 +97,15 @@ class App extends Component {
       return <Component {...props} user={this.state.user} logout={this.logout.bind(this)} login={this.login.bind(this)} />
     }
     return (
+
       <div className="container">
-        <Router history={this.props.history} createElement={createElement.bind(this)}>
+        <Router createElement={createElement.bind(this)}>
           <Route path="/" component={Layout} >
             <IndexRoute component={Home} onEnter={this.enterHome.bind(this)}/>
             <Route path="home" component={Home} onEnter={this.enterHome.bind(this)}/>
             <Route path="gate" component={GatePage}>
               <IndexRoute component={Marketing} />
-              <Route path="verify/:token/(:forgot)" component={Verify} />
+              <Route path="verify/:token(/:forgot)" component={Verify} />
               <Route path="signup" component={SignUp} />
               <Route path="forgot" component={Forgot} />
             </Route>

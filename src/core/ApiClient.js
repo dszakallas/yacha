@@ -21,7 +21,7 @@ const ApiClient = {
       });
   }),
 
-  createRoom: (id) => new Promise((resolve, reject) => {
+  createRoom: (name) => new Promise((resolve, reject) => {
     request
       .post(apiUrl('/user/admin/rooms'))
       .send({name: name})
@@ -56,6 +56,21 @@ const ApiClient = {
       .end((err, res) => {
         if (err) {
           reject(err);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  verify: (forgot, token) => new Promise((resolve, reject) => {
+    const url = forgot ? apiUrl('/forgot/verify') : apiUrl('/activate/verify')
+    request
+      .post(url)
+      .send({token: token})
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
         } else {
           resolve(res.body);
         }
