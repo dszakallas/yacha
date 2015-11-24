@@ -735,6 +735,17 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
                           return;
                       }
                       let roomData = JSON.parse(reply);
+
+                      let admin = false;
+                      for (var j=0; j<roomData.Admins.length; j++){
+                          if (roomData.Admins[j] === UserId)
+                            admin = true;
+                      }
+                      if (admin === false){
+                        res.sendStatus(403);
+                        return;
+                      }
+
                       var mailOptions = {
                           from: 'yacha ✔ <yacha@yachamail.com>', // sender address
                           to: uname, // list of receivers
