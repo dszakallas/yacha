@@ -11,6 +11,7 @@ import SignUp from '../SignUp';
 import Verify from '../Verify';
 import Forgot from '../Forgot';
 import Home from '../Home';
+import Chat from '../Chat';
 
 import ApiClient from '../../core/ApiClient';
 
@@ -19,9 +20,7 @@ import Footer from '../Footer';
 
 const Layout = React.createClass({
   render: function(){
-    console.log(this.props.logout);
     return (
-
       <div>
         <Header {...this.props} />
         {this.props.children}
@@ -68,6 +67,10 @@ class App extends Component {
     }*/
   }
 
+  enterChat(nextState, replaceState) {
+    console.log("Entering chat");
+  }
+
   async login(email, password) {
     const user = await ApiClient.login(email, password);
     console.log(`${user.nickname} logged in`);
@@ -103,6 +106,7 @@ class App extends Component {
           <Route path="/" component={Layout} >
             <IndexRoute component={Home} onEnter={this.enterHome.bind(this)}/>
             <Route path="home" component={Home} onEnter={this.enterHome.bind(this)}/>
+            <Route path="chat/:roomid" component={Chat} onEnter={this.enterChat.bind(this)}/>
             <Route path="gate" component={GatePage}>
               <IndexRoute component={Marketing} />
               <Route path="verify/:token(/:forgot)" component={Verify} />

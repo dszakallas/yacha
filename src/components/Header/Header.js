@@ -28,9 +28,7 @@ class Header extends Component {
       </ul>
     );
   }
-
   render() {
-    console.log("logout: " + this.props.logout);
     return (
       <div className="header">
         { this.props.user ? this.appNav.call(this) : this.gateNav.call(this) }

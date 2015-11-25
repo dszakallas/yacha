@@ -54,9 +54,8 @@ class Home extends Component {
   }
 
   async createRoom() {
-    let room;
     try {
-      room = await ApiClient.createRoom(this.state.createRoomNameInput);
+      const room = await ApiClient.createRoom(this.state.createRoomNameInput);
       let new_ = this.state.rooms;
       new_.push(room);
       this.setState({ rooms: new_ });
@@ -103,8 +102,9 @@ class Home extends Component {
     let rooms = this.state.rooms.map((room) => {
       return(
         <tr key={room.id} >
-          <td><Link to={`/home/chat/${room.id}`}>{room.name}</Link></td>
-          { room.admin ? <td><span className="glyphicon glyphicon-star" aria-hidden="true"></span></td> : null }
+          { room.admin ? <td><span className="glyphicon glyphicon-star" aria-hidden="true"></span></td> : <td></td> }
+          <td><Link to={`/chat/${room.id}`}>{room.name}</Link></td>
+          <td><span className="glyphicon glyphicon-cog" aria-hidden="true"></span></td>
         </tr>
       );
     });
@@ -124,7 +124,7 @@ class Home extends Component {
         <div className="col-xs-12 col-md-6">
           <div className="row">
             <div className="col-xs-6">
-              <h1>Online friends</h1>
+              <h1>Friends</h1>
             </div>
             <div className="col-xs-6 table-ops">
               <h1 className="btn btn-default"><span className="glyphicon glyphicon-plus" aria-hidden="true"></span></h1>
@@ -160,8 +160,8 @@ class Home extends Component {
               <table className="table table-striped">
                 <thead>
                   <tr>
-                    <th className="col-sm-10"></th>
                     <th className="col-sm-1"></th>
+                    <th className="col-sm-10"></th>
                     <th className="col-sm-1"></th>
                   </tr>
                 </thead>
