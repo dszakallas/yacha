@@ -813,7 +813,7 @@ router.delete('/user/admin/rooms/:roomid',  (req,res) => {
 router.get('/users/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let uid = req.params.userid;
-    redisClient.hget('rooms',uid, (err, reply) => {
+    redisClient.hget('users',uid, (err, reply) => {
         if (err){
             console.log("Internal server error");
             res.sendStatus(500);
@@ -833,6 +833,7 @@ router.get('/users/:userid',  (req,res) => {
     console.log('/api/user/:userid GET');
   });
 });
+
 
 router.get('/users/search/:keyword',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
