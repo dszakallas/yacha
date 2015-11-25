@@ -1,22 +1,38 @@
 import React, { PropTypes, Component } from 'react';
-import { render } from 'react-dom'
 import { Router, Route, Link } from 'react-router'
 
 import withStyles from '../../decorators/withStyles';
 import styles from './Header.less';
 
+import ApiClient from '../../core/ApiClient';
+
 @withStyles(styles)
 class Header extends Component {
 
+
+  appNav() {
+    return (
+      <ul className="nav nav-pills pull-right">
+        <li className="btn"><Link to={`/home/profile`}>{this.props.user.nickname}</Link></li>
+        <li className="btn"><a onClick={this.props.logout}>Logout</a></li>
+      </ul>
+    );
+  }
+
+  gateNav() {
+    return (
+      <ul className="nav nav-pills pull-right">
+        <li className="btn"><Link to={`/gate`}>Sign in</Link></li>
+        <li className="btn"><Link to={`/gate/signup`}>Sign up</Link></li>
+        <li className="btn"><a href="#">Contact</a></li>
+      </ul>
+    );
+  }
   render() {
     return (
       <div className="header">
-        <ul className="nav nav-pills pull-right">
-          <li><Link to={`/login`}>Sign in</Link></li>
-          <li><Link to={`/signup`}>Sign up</Link></li>
-          <li><a href="#">Contact</a></li>
-        </ul>
-        <h3 className="text-muted">Yacha</h3>
+        { this.props.user ? this.appNav.call(this) : this.gateNav.call(this) }
+        <h3 className="text-muted"><Link to={`/home`}>Yacha</Link></h3>
       </div>
     );
   }
