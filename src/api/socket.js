@@ -14,7 +14,7 @@ exports = module.exports = (io) => {
     });
 
     // when the client emits 'sendchat', this listens and executes
-    socket.on('sendchat', (data) => {
+    socket.on('sendChat', (data) => {
         let roomid = socket.room;
         let msg = data.message;
         let UserId = data.username;
@@ -42,12 +42,7 @@ exports = module.exports = (io) => {
                   if (member){
                     let messages = roomData.Messages;
                     let currentDate = new Date();
-                    let datetime = currentDate.getDate() + "/"
-                        + (currentDate.getMonth()+1)  + "/"
-                        + currentDate.getFullYear() + " @ "
-                        + currentDate.getHours() + ":"
-                        + currentDate.getMinutes() + ":"
-                        + currentDate.getSeconds();
+                    let datetime = currentDate.toISOString();
                     let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
                     messages.push(nmsg);
                     if (messages.length > 50)
@@ -60,14 +55,14 @@ exports = module.exports = (io) => {
                       messagesToSend.push({"user" : roomData.Messages[i].User, "timestamp" : roomData.Messages[i].Timestamp, "message" : roomData.Messages[i].Message});
 
                     }
-                    socket.broadcast.to(socket.room).emit('updatechat', messagesToSend);
+                    socket.broadcast.to(socket.room).emit('updateChat', messagesToSend);
                   }
                   else{
                     //res.sendStatus(204);
                   }
                 }
       });
-      
+
     });
 
     socket.on('switchRoom', (data) => {

@@ -234,7 +234,7 @@ router.post('/register',  (req,res) => {
                         redisClient.hset('rooms', ID,nroomstring);
                         redisClient.hset('users', email, newuserstring);
                         res.sendStatus(204);
-                        
+
                       }
                       else{
                         redisClient.hget('rooms',globalKey, (err, reply) => {
@@ -256,18 +256,18 @@ router.post('/register',  (req,res) => {
                                   res.sendStatus(204);
                                 }
                         });
-                        
+
                       }
                   });
             });
 
-            
+
           }
 
-        }); 
+        });
     });
-   }     
-  
+   }
+
   });
   console.log('/api/register');
 });
@@ -554,12 +554,7 @@ router.post('/user/rooms/:roomid/messages',  (req,res) => {
               if (member){
                 let messages = roomData.Messages;
                 let currentDate = new Date();
-                let datetime = currentDate.getDate() + "/"
-                    + (currentDate.getMonth()+1)  + "/"
-                    + currentDate.getFullYear() + " @ "
-                    + currentDate.getHours() + ":"
-                    + currentDate.getMinutes() + ":"
-                    + currentDate.getSeconds();
+                let datetime = currentDate.toISOString();
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
                 messages.push(nmsg);
                 if (messages.length > 50)
@@ -750,7 +745,7 @@ router.put('/user/admin/rooms/:roomid/invite/:uname',  (req,res) => {
                           from: 'yacha ✔ <yacha@yachamail.com>', // sender address
                           to: uname, // list of receivers
                           subject: 'Yacha chat room invitation', // Subject line
-                          text: 'Dear Yacha User,\nYou were invite to ' + roomData.Name + ' room.\nThe room id is: ' + roomid + ' .'   
+                          text: 'Dear Yacha User,\nYou were invite to ' + roomData.Name + ' room.\nThe room id is: ' + roomid + ' .'
 
                       };
 
@@ -1215,12 +1210,7 @@ router.post('/user/pm/:uid',  (req,res) => {
                 let roomData = room;
                 let messages = roomData.Messages;
                 let currentDate = new Date();
-                let datetime = currentDate.getDate() + "/"
-                    + (currentDate.getMonth()+1)  + "/"
-                    + currentDate.getFullYear() + " @ "
-                    + currentDate.getHours() + ":"
-                    + currentDate.getMinutes() + ":"
-                    + currentDate.getSeconds();
+                let datetime = currentDate.toISOString();
                 let msg = req.body.message;
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
                 messages.push(nmsg);
@@ -1248,12 +1238,7 @@ router.post('/user/pm/:uid',  (req,res) => {
                 redisClient.hset('rooms',ID,nroomstring);
                 let messages = roomData.Messages;
                 let currentDate = new Date();
-                let datetime = currentDate.getDate() + "/"
-                    + (currentDate.getMonth()+1)  + "/"
-                    + currentDate.getFullYear() + " @ "
-                    + currentDate.getHours() + ":"
-                    + currentDate.getMinutes() + ":"
-                    + currentDate.getSeconds();
+                let datetime = currentDate.toISOString();
                 let msg = req.body.message;
                 let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
                 messages.push(nmsg);
