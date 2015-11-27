@@ -426,7 +426,7 @@ router.get('/user/rooms/:roomid/messages', (req,res) => {
                     },
                     (err) => {
                       if(err)
-                        sendInternalError
+                        sendInternalError(res);
                       else {
                         let results = parsed.map(
                           (message) => {
