@@ -21,6 +21,19 @@ const ApiClient = {
       });
   }),
 
+  room: (id) => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl('/user/rooms/:id'))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
   createRoom: (name) => new Promise((resolve, reject) => {
     request
       .post(apiUrl('/user/admin/rooms'))
@@ -143,35 +156,7 @@ const ApiClient = {
           resolve(res.body);
         }
       });
-  }),
-
-  get: path => new Promise((resolve, reject) => {
-    request
-      .get(apiUrl(path))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
-
-  post: (path, data) => new Promise((resolve, reject) => {
-    request
-      .post(apiUrl(path))
-      /*.accept('application/json')*/
-      .send(data)
-      .end((err, res) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
-
+  })
 };
 
 export default ApiClient;

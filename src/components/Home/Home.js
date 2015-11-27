@@ -35,7 +35,7 @@ class Home extends Component {
       friends = await ApiClient.friends();
       this.setState({rooms: rooms, friends: friends});
     } catch (err) {
-      console.warn(`Home error ${err}`);
+      
     }
 
   }
