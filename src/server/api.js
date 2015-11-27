@@ -1,50 +1,44 @@
 /*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
 
-import { join } from 'path';
 import { Router } from 'express';
-import redis from 'redis';
+
 import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
-import url from 'url';
+
 import bodyParser from 'body-parser';
 import async from 'async'
-import nodemailer from 'nodemailer';
-import smtp from 'nodemailer-smtp-transport';
 
-// create reusable transporter object using SMTP transport
-let transporter = nodemailer.createTransport(smtp({
-    port: process.env.MAILGUN_SMTP_PORT,
-    host: process.env.MAILGUN_SMTP_SERVER,
-    auth: {
-        user: process.env.MAILGUN_SMTP_LOGIN,
-        pass: process.env.MAILGUN_SMTP_PASSWORD
-    },
-    name: 'yacha.herokuapp.com'
-}));
+import redisClient from './redis';
+import emailClient from './email';
+import { prettyLog, hash, sha256Hash } from './utils';
 
-const router = new Router();
-router.use(cookieParser());
-router.use(bodyParser.json()); // for parsing application/json
-router.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-let redisClient;
+prettyLog('                        888             ');
+prettyLog('                        888             ');
+prettyLog('                        888             ');
+prettyLog('888  888 8888b.  .d8888b88888b.  8888b. ');
+prettyLog('888  888    "88bd88P"   888 "88b    "88b');
+prettyLog('888  888.d888888888     888  888.d888888');
+prettyLog('Y88b 888888  888Y88b.   888  888888  888');
+prettyLog(' "Y88888"Y888888 "Y8888P888  888"Y888888');
+prettyLog('     888                                ');
+prettyLog('Y8b d88P                                ');
+prettyLog(' "Y88P"                                 ');
+prettyLog('                                        ');
+prettyLog('*-------* YET ANOTHER CHAT APP *-------*');
+prettyLog('|                                      |');
+prettyLog('|Copyright (c) 2015 David Szakallas    |');
+prettyLog('|                   Gergo Gembolya     |');
+prettyLog('*--------------------------------------*');
 
-if (process.env.REDISCLOUD_URL) {
-  let rtg   = url.parse(process.env.REDISCLOUD_URL);
-  redisClient = redis.createClient(rtg.port, rtg.hostname, {no_ready_check: true});
-  redisClient.auth(rtg.auth.split(":")[1]);
-} else {
-  redisClient = redis.createClient();
-}
+
+const api = new Router();
+api.use(cookieParser());
+api.use(bodyParser.json()); // for parsing application/json
+api.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+
 
 redisClient.hmset(`room:global`, {Private: false, Name: 'global'});
 
-function hash(value) {
-  return crypto.createHash('md5').update(value).digest('base64');
-}
-
-function sha256Hash(value) {
-  return crypto.createHash('sha256').update(value).digest('base64');
-}
 
 function sendInternalError(res) {
   res.sendStatus(500);
@@ -56,22 +50,23 @@ function checkAuthentication (req, res, cb, opts){
   };
   Object.assign(options, opts);
 
-  let authToken = req.cookies.AuthNumber;
+  let authToken = req.cookies.AuthToken;
   redisClient.hget('authTokens', authToken, (err, user) => {
     if(err) {
       console.error(err);
       sendInternalError(res)
     } else if(!user) {
-      console.log('The user is not authenticated');
+      prettyLog(`client ${req.ip} unauthorized`, 'INFO');
       res.sendStatus(401);
     } else {
-      console.log('The user is authenticated');
       if(options.invalidate) {
-        res.clearCookie('AuthNumber');
+        res.clearCookie('AuthToken');
+        res.set('X-Yacha-AuthToken', '');
         redisClient.hdel('authTokens', authToken);
         cb(req, res, user);
       } else {
-        res.cookie('AuthNumber', authToken);
+        res.cookie('AuthToken', authToken, {path: '/api/'});
+        res.set('X-Yacha-AuthToken', authToken);
         cb(req, res, user);
       }
     }
@@ -79,19 +74,16 @@ function checkAuthentication (req, res, cb, opts){
 }
 
 
-redisClient.on('connect', () => {
-    console.log('REDIS connected');
-});
 
-router.post('/logout',  (req,res) => {
+api.post('/logout',  (req,res) => {
   checkAuthentication (req, res, (req, res) => { res.sendStatus(204); }, {invalidate: true});
 });
 
-router.post('/login',  (req,res) => {
+api.post('/login',  (req,res) => {
   let email = req.body.email;
   let pw1 = req.body.password;
   if (!email || !pw1) {
-    console.log("/api/login: Missing fields");
+    prettyLog("/login: Missing fields");
     res.sendStatus(400);
     return;
   }
@@ -100,7 +92,7 @@ router.post('/login',  (req,res) => {
 
   redisClient.exists(`user:${emailHash}`, (err, exists) => {
     if(exists !== 1) {
-      console.log("/api/login: Bad username");
+      prettyLog("/login: Bad username");
       res.sendStatus(401);
     } else {
       let pwHash = hash(pw1);
@@ -110,15 +102,17 @@ router.post('/login',  (req,res) => {
           sendInternalError(res);
         } else {
           if(!userData.Activated) {
-            console.log("/api/login: Not activated");
+            prettyLog("/login: Not activated");
             res.sendStatus(401);
           } else if(userData.Password !== pwHash) {
-            console.log("/api/login: Bad password");
+            prettyLog("/login: Bad password");
             res.sendStatus(401);
           } else {
             let authToken = crypto.randomBytes(64).toString('hex');
-            res.cookie('AuthNumber', authToken);
+            res.cookie('AuthToken', authToken, {path: '/api/'});
+            res.set('X-Yacha-AuthToken', authToken);
             redisClient.hset(`authTokens`, authToken, emailHash);
+            prettyLog(`/login: ${userData.email} logged in`);
             res.status(200).send({ email: userData.Email, nickname: userData.NickName });
           }
         }
@@ -128,7 +122,7 @@ router.post('/login',  (req,res) => {
 });
 
 
-router.post('/register',  (req,res) => {
+api.post('/register',  (req,res) => {
   let nickname = req.body.username;
   let email = req.body.email;
   let pw1 = req.body.password;
@@ -184,7 +178,7 @@ router.post('/register',  (req,res) => {
 });
 
 
-router.get('/user',  (req,res) => {
+api.get('/user',  (req,res) => {
   checkAuthentication(req, res, (req, res, emailHash) => {
     console.log("id is: " + emailHash);
     redisClient.hgetall(`user:${emailHash}`, (err, userData) => {
@@ -199,10 +193,9 @@ router.get('/user',  (req,res) => {
   });
 });
 
-router.put('/user',  (req,res) => {
+api.put('/user',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
-    // csak nicknkevet és password-ot is lehet, ahogy wikin le van írva
     let password = req.body.password;
 
     if(!password) {
@@ -218,7 +211,7 @@ router.put('/user',  (req,res) => {
 });
 
 
-router.get('/user/rooms', (req,res) => {
+api.get('/user/rooms', (req,res) => {
   checkAuthentication(req, res, (req, res, emailHash) => {
 
     redisClient.smembers(`member:${emailHash}:rooms`, (err, rooms) => {
@@ -247,7 +240,7 @@ router.get('/user/rooms', (req,res) => {
   });
 });
 
-router.get('/user/rooms/:roomid', (req,res) => {
+api.get('/user/rooms/:roomid', (req,res) => {
   checkAuthentication(req,res, (req, res, emailHash) => {
 
     let roomid = req.params.roomid;
@@ -305,7 +298,7 @@ router.get('/user/rooms/:roomid', (req,res) => {
   });
 });
 
-router.delete('/user/rooms/:roomid',  (req,res) => {
+api.delete('/user/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     let roomid = req.params.roomid;
@@ -346,7 +339,7 @@ router.delete('/user/rooms/:roomid',  (req,res) => {
   });
 });
 
-router.post('/user/rooms/:roomid/join',  (req,res) => {
+api.post('/user/rooms/:roomid/join',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let roomid = req.params.roomid;
 
@@ -379,7 +372,7 @@ router.post('/user/rooms/:roomid/join',  (req,res) => {
   });
 });
 
-router.get('/user/rooms/:roomid/messages', (req,res) => {
+api.get('/user/rooms/:roomid/messages', (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let roomid = req.params.roomid;
 
@@ -451,7 +444,7 @@ router.get('/user/rooms/:roomid/messages', (req,res) => {
   });
 });
 
-router.post('/user/rooms/:roomid/messages', (req,res) => {
+api.post('/user/rooms/:roomid/messages', (req,res) => {
 
   checkAuthentication(req,res, (req,res, emailHash) => {
     let roomid = req.params.roomid;
@@ -500,7 +493,7 @@ router.post('/user/rooms/:roomid/messages', (req,res) => {
   });
 });
 
-router.get('/user/admin/rooms', (req,res) => {
+api.get('/user/admin/rooms', (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     redisClient.smembers(`admin:${emailHash}:rooms`, (err, rooms) => {
@@ -520,7 +513,7 @@ router.get('/user/admin/rooms', (req,res) => {
   });
 });
 
-router.post('/user/admin/rooms',  (req,res) => {
+api.post('/user/admin/rooms',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let Name = req.body.name;
     if (!Name){
@@ -552,7 +545,7 @@ router.post('/user/admin/rooms',  (req,res) => {
   });
 });
 
-router.put('/user/admin/rooms/:roomid',  (req,res) => {
+api.put('/user/admin/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     var roomid = req.params.roomid;
     var newName = body.name;
@@ -579,7 +572,7 @@ router.put('/user/admin/rooms/:roomid',  (req,res) => {
   });
 });
 
-router.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
+api.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
   let userid = req.params.userid;
   let roomid = req.params.roomid;
@@ -606,7 +599,7 @@ router.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
                      text: `Dear ${userData.NickName},\nYou were invited to the ${roomData.Name} room.\nThe room id is: ${roomid} .`
                   };
 
-                  transporter.sendMail(mailOptions, function(error, info){
+                  emailClient.sendMail(mailOptions, function(error, info){
                      if(error){
                          res.sendStatus(500);
                          return console.log(error);
@@ -627,7 +620,7 @@ router.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
   });
 });
 
-router.delete('/user/admin/rooms/:roomid',  (req,res) => {
+api.delete('/user/admin/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let roomid = req.params.roomid;
 
@@ -679,7 +672,7 @@ router.delete('/user/admin/rooms/:roomid',  (req,res) => {
   });
 });
 
-router.get('/users/:userid',  (req,res) => {
+api.get('/users/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let userid = req.params.userid;
     redisClient.exists(`user:${userid}`, (err, exists) => {
@@ -696,7 +689,7 @@ router.get('/users/:userid',  (req,res) => {
 });
 
 
-router.get('/users/search',  (req,res) => {
+api.get('/users/search',  (req,res) => {
   checkAuthentication(req,res, (req,res) => {
     let kw = req.query.q;
     let users = [];
@@ -726,7 +719,7 @@ router.get('/users/search',  (req,res) => {
   });
 });
 
-router.get('/user/friends',  (req,res) => {
+api.get('/user/friends',  (req,res) => {
   checkAuthentication(req,res, (req, res, emailHash) => {
 
     redisClient.smembers(`user:${emailHash}:friends`, (err, friends) => {
@@ -742,7 +735,7 @@ router.get('/user/friends',  (req,res) => {
   });
 });
 
-router.get('/user/friends/invite',  (req,res) => {
+api.get('/user/friends/invite',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     redisClient.smembers(`user:${emailHash}:invites`, (err, invites) => {
@@ -758,7 +751,7 @@ router.get('/user/friends/invite',  (req,res) => {
   });
 });
 
-router.put('/user/friends/invite/:userid',  (req,res) => {
+api.put('/user/friends/invite/:userid',  (req,res) => {
   checkAuthentication(req,res, (req, res, emailHash) => {
 
     let userid = req.params.userid;
@@ -784,7 +777,7 @@ router.put('/user/friends/invite/:userid',  (req,res) => {
   });
 });
 
-router.get('/user/friends/invite/requests',  (req,res) => {
+api.get('/user/friends/invite/requests',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     redisClient.smembers(`user:${emailHash}:requests`, (err, requests) => {
@@ -800,7 +793,7 @@ router.get('/user/friends/invite/requests',  (req,res) => {
   });
 });
 
-router.put('/user/friends/invite/requests/:userid',  (req,res) => {
+api.put('/user/friends/invite/requests/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     let userid = req.params.userid;
@@ -821,7 +814,7 @@ router.put('/user/friends/invite/requests/:userid',  (req,res) => {
   });
 });
 
-router.get('/user/pm/:userid',  (req,res) => {
+api.get('/user/pm/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     let otherUser = req.params.userid;
@@ -846,7 +839,7 @@ router.get('/user/pm/:userid',  (req,res) => {
   });
 });
 
-router.post('/user/pm/:userid',  (req,res) => {
+api.post('/user/pm/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let otherUser = req.params.userid;
 
@@ -886,7 +879,7 @@ router.post('/user/pm/:userid',  (req,res) => {
 });
 
 
-router.post('/activate/send',  (req,res) => {
+api.post('/activate/send',  (req,res) => {
     let email = req.body.email;
     if (!email){
       res.sendStatus(400);
@@ -917,7 +910,7 @@ router.post('/activate/send',  (req,res) => {
                 text: 'Activation a tokennel ' + token
             };
             // send mail with defined transport object
-            transporter.sendMail(mailOptions, function(error, info){
+            emailClient.sendMail(mailOptions, function(error, info){
                   if(error){
                       res.sendStatus(400);
                       return console.log(error);
@@ -933,7 +926,7 @@ router.post('/activate/send',  (req,res) => {
   console.log('/api/activate/send post');
 });
 
-router.post('/activate/verify',  (req,res) => {
+api.post('/activate/verify',  (req,res) => {
     let token = req.body.token;
     if (!token){
       res.sendStatus(400);
@@ -962,7 +955,7 @@ router.post('/activate/verify',  (req,res) => {
 });
 
 
-router.post('/forgot/send',  (req,res) => {
+api.post('/forgot/send',  (req,res) => {
   let email = req.body.email;
   if (!email){
     res.sendStatus(400);
@@ -987,7 +980,7 @@ router.post('/forgot/send',  (req,res) => {
               text: 'Forgot a tokennel ' + token
           };
           // send mail with defined transport object
-          transporter.sendMail(mailOptions, function(error, info){
+          emailClient.sendMail(mailOptions, function(error, info){
                 if(error){
                     res.sendStatus(400);
                     return console.log(error);
@@ -1003,7 +996,7 @@ router.post('/forgot/send',  (req,res) => {
   console.log('/api/forgot/send post');
 });
 
-router.post('/forgot/verify', (req,res) => {
+api.post('/forgot/verify', (req,res) => {
   let token = req.body.token;
   if (!token){
     res.sendStatus(400);
@@ -1022,8 +1015,8 @@ router.post('/forgot/verify', (req,res) => {
           if(err)
             sendInternalError(res);
           else {
-            res.clearCookie('AuthNumber');
-            res.cookie('AuthNumber', authToken);
+            res.cookie('AuthToken', authToken, { path: '/api/'});
+            res.set('X-Yacha-AuthToken', authToken);
             res.sendStatus(204);
           }
         });
@@ -1032,5 +1025,4 @@ router.post('/forgot/verify', (req,res) => {
   console.log('/api/forgot/verify post');
 });
 
-export default router;
-exports.redisClient = redisClient;
+export default api;

@@ -1,8 +1,14 @@
-
-import  content from'./content';
-let redisClient = content.redisClient;
+import cookieParser from 'socket.io-cookie';
+import redisClient from './redis';
 
 exports = module.exports = (io) => {
+
+  io.use(cookieParser);
+
+  io.use((socket, next) => {
+    if (socket.request.headers.cookie) return next();
+  });
+
   io.sockets.on('connection',  (socket) => {
     // when the client emits 'enterRoom', this listens and executes
     socket.on('enterRoom', (data) => {
@@ -22,7 +28,7 @@ exports = module.exports = (io) => {
           //res.sendStatus(400);
           return;
         }
-        redisClient.hget('rooms',roomid, (err, reply) => {
+        redisClient.hget('rooms', roomid, (err, reply) => {
                 if (err){
                     console.log("Internal server error");
                     //res.sendStatus(500);
@@ -50,12 +56,13 @@ exports = module.exports = (io) => {
                     roomData.Messages=messages;
                     roomDataString = JSON.stringify(roomData);
                     redisClient.hset('rooms', roomid,roomDataString);
+                    /*
                     let messagesToSend = [];
                     for(var i=0; i<roomData.Messages.length; i++){
                       messagesToSend.push({"user" : roomData.Messages[i].User, "timestamp" : roomData.Messages[i].Timestamp, "message" : roomData.Messages[i].Message});
 
-                    }
-                    socket.broadcast.to(socket.room).emit('updateChat', messagesToSend);
+                    }*/
+                    socket.broadcast.to(socket.room).emit('updateChat', nmsg);
                   }
                   else{
                     //res.sendStatus(204);
