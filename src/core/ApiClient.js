@@ -22,8 +22,9 @@ const ApiClient = {
   }),
 
   room: (id) => new Promise((resolve, reject) => {
+    let encoded = encodeURIComponent(id);
     request
-      .get(apiUrl(`/user/rooms/${id}`))
+      .get(apiUrl(`/user/rooms/${encoded}`))
       /*.accept('application/json')*/
       .end((err, res) => {
         if (err) {
@@ -35,8 +36,9 @@ const ApiClient = {
   }),
 
   messages: (roomId) => new Promise((resolve, reject) => {
+    let encoded = encodeURIComponent(roomId);
     request
-      .get(apiUrl(`/user/rooms/${roomId}/messages`))
+      .get(apiUrl(`/user/rooms/${encoded}/messages`))
       .end((err, res) => {
         if(err)
           reject(res);

@@ -23,7 +23,9 @@ class Home extends Component {
       createRoomModalOpen: false,
       createRoomNameInput: '',
 
-      addFriendModalOpen: false
+      addFriendModalOpen: false,
+
+      socketReconnect: false,
 
     }
   }
@@ -54,8 +56,9 @@ class Home extends Component {
 
   async createRoom() {
     try {
+      console.log("Create room called");
       const room = await ApiClient.createRoom(this.state.createRoomNameInput);
-      let new_ = this.state.rooms;
+      let new_ = this.state.rooms.splice(0, this.state.rooms.length);
       new_.push(room);
       this.setState({ rooms: new_ });
     } catch(err) {
@@ -95,15 +98,18 @@ class Home extends Component {
     );
   }
 
-
-
   render() {
+    return this.props.children ? this.props.children : this.renderHome.call(this);
+  }
+
+
+  renderHome() {
     let rooms = this.state.rooms.map((room) => {
       return(
         <tr key={room.id} >
           { room.admin ? <td><span className="glyphicon glyphicon-star" aria-hidden="true"></span></td> : <td></td> }
-          <td><Link to={`/chat/${room.id}`}>{room.name}</Link></td>
-          <td><span className="glyphicon glyphicon-cog" aria-hidden="true"></span></td>
+          <td><Link to={`/home/chat/${encodeURIComponent(room.id)}`}>{room.name}</Link></td>
+          <td><Link to={`/home/room/${encodeURIComponent(room.id)}`}><span className="glyphicon glyphicon-cog" aria-hidden="true"></span></Link></td>
         </tr>
       );
     });
@@ -185,35 +191,15 @@ class Home extends Component {
             className="form-control"
             id="createRoomInputRoomName"
             placeholder="Room name"
-            value={this.state.createRoomNameInputRoomName}
-            onChange={(e) => this.setState({ createRoomNameInputRoomName: e.target.value})} />
+            value={this.state.createRoomNameInput}
+            onChange={(e) => this.setState({ createRoomNameInput: e.target.value})} />
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
           <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
         </Modal.Footer>
       </Modal>
-      <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Create a new room</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <h4>Enter a name for the room</h4>
-            <label htmlFor="createRoomInputRoomName" className="sr-only">Room name</label>
-            <input
-              type="text"
-              className="form-control"
-              id="createRoomInputRoomName"
-              placeholder="Room name"
-              value={this.state.createRoomNameInputRoomName}
-              onChange={(e) => this.setState({ createRoomNameInputRoomName: e.target.value})} />
-          </Modal.Body>
-          <Modal.Footer>
-            <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
-            <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
-          </Modal.Footer>
-        </Modal>
-      </div>
+    </div>
     );
   }
 }

@@ -375,6 +375,8 @@ api.get('/user/rooms/:roomid/messages', (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let roomid = req.params.roomid;
 
+    console.log(roomid);
+
     redisClient.exists(`room:${roomid}`, (err, roomExists) => {
       if(err)
         sendInternalError(res);
@@ -546,6 +548,8 @@ api.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
   let userid = req.params.userid;
   let roomid = req.params.roomid;
+
+
 
   redisClient.sismember(`admin:${emailHash}:rooms`, roomid, (err, isAdmin) => {
     if(!isAdmin) {

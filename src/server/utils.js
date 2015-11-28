@@ -1,11 +1,11 @@
 import crypto from 'crypto';
 
 export function hash(value) {
-  return encodeURIComponent(crypto.createHash('md5').update(value).digest('base64'));
+  return crypto.createHash('md5').update(value).digest('base64');
 }
 
 export function sha256Hash(value) {
-  return encodeURIComponent(crypto.createHash('sha256').update(value).digest('base64'));
+  return crypto.createHash('sha256').update(value).digest('base64');
 }
 
 export function prettyLog(message, lvl) {

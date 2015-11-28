@@ -49,7 +49,7 @@ exports = module.exports = (io) => {
           prettyLog(`${socket.data.user.email} tried to join the bad room ${roomid}`, 'WARN');
         } else {
           prettyLog(`${socket.data.user.email} joined the room ${roomid}`);
-          socket.data.room = roomid
+          socket.data.room = roomid;
           socket.join(socket.data.room);
           io.sockets.in(socket.data.room).emit('userJoined',
             JSON.stringify({
@@ -70,10 +70,23 @@ exports = module.exports = (io) => {
       });
     });
 
+    socket.on('leave', () => {
+      socket.broadcast.to(socket.data.room).emit('userLeft',
+        JSON.stringify({
+          ServerTimestamp: new Date(),
+          Status: 'join',
+          User: socket.data.user
+        }));
+      let room = socket.data.room;
+      delete socket.data.room;
+      roomSubscriber.unsubscribe();
+      prettyLog(`${socket.data.user.email} left the room ${room}`);
+    });
+
     socket.on('disconnect', () => {
 
       if(socket.data.room) {
-        socket.broadcast.to(socket.data.room).emit('userLeftRoom',
+        socket.broadcast.to(socket.data.room).emit('userLeft',
           JSON.stringify({
             ServerTimestamp: new Date(),
             Status: 'leave',

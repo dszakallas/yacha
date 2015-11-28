@@ -12,11 +12,13 @@ import Verify from '../Verify';
 import Forgot from '../Forgot';
 import Home from '../Home';
 import Chat from '../Chat';
+import Room from '../Room';
 
 import ApiClient from '../../core/ApiClient';
 
 import Header from '../Header';
 import Footer from '../Footer';
+
 
 const Layout = React.createClass({
   render: function(){
@@ -110,8 +112,10 @@ class App extends Component {
         <Router createElement={createElement.bind(this)}>
           <Route path="/" component={Layout} >
             <IndexRoute component={Home} onEnter={this.enterHome.bind(this)}/>
-            <Route path="home" component={Home} onEnter={this.enterHome.bind(this)}/>
-            <Route path="chat/:roomid" component={Chat} onEnter={this.enterChat.bind(this)}/>
+            <Route path="home" component={Home} onEnter={this.enterHome.bind(this)}>
+              <Route path="chat/:roomid" component={Chat} />
+              <Route path="room/:roomid" component={Room} />
+            </Route>
             <Route path="gate" component={GatePage}>
               <IndexRoute component={Marketing} />
               <Route path="verify/:token(/:forgot)" component={Verify} />

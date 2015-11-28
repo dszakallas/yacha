@@ -10,7 +10,6 @@ import io from 'socket.io-client';
 @withStyles(styles)
 class Chat extends Component {
 
-
   constructor() {
     super();
 
@@ -20,15 +19,16 @@ class Chat extends Component {
       message: ''
     };
 
-    this.socket = io.connect();
   }
 
+  setupSocket() {
 
-  async refreshRoom() {
+    let socket = this.socket = io.connect();
 
-  }
+    socket.on('disconnect', () => {
+      console.log("SocketClient disconnected from server ");
 
-  joinRoom(socket) {
+    });
 
     socket.on('connect', () => {
       console.log("SocketClient connected to server");
@@ -61,6 +61,7 @@ class Chat extends Component {
   async getRoomData() {
     try {
       let users = [];
+
       const room = ApiClient.room(this.props.params.roomid);
       const messages = ApiClient.messages(this.props.params.roomid);
       this.setState({ room: await room, initialMessages: (await messages).reverse() });
@@ -72,10 +73,19 @@ class Chat extends Component {
 
   async componentDidMount() {
 
-    this.joinRoom.call(this, this.socket);
+    console.log('component Mounting');
+
+    this.setupSocket.call(this);
 
     this.getRoomData.call(this);
 
+  }
+
+  async componentWillUnmount() {
+    console.log('component Unmunting');
+
+    this.socket.emit('leave');
+    this.socket.io.disconnect();
   }
 
   renderStatus(element) {
