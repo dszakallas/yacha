@@ -35,14 +35,13 @@ class Home extends Component {
       friends = await ApiClient.friends();
       this.setState({rooms: rooms, friends: friends});
     } catch (err) {
-      
+
     }
 
   }
 
   componentDidMount() {
     this.loadStateFromServer.call(this);
-    setInterval(this.loadStateFromServer.bind(this), 30000);
   }
 
   createRoomModalOpen() {

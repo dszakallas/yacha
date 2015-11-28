@@ -1,19 +1,22 @@
-import redis from 'redis';
+import Redis from 'ioredis';
 import url from 'url';
 import { prettyLog } from './utils';
 
-let redisClient;
+export default function createRedisClient() {
 
-if (process.env.REDISCLOUD_URL) {
-  let rtg   = url.parse(process.env.REDISCLOUD_URL);
-  redisClient = redis.createClient(rtg.port, rtg.hostname, {no_ready_check: true});
-  redisClient.auth(rtg.auth.split(":")[1]);
-} else {
-  redisClient = redis.createClient();
+  let redisClient;
+  if (process.env.REDISCLOUD_URL) {
+    let rtg   = url.parse(process.env.REDISCLOUD_URL);
+    redisClient = new Redis(rtg.port, rtg.hostname);
+    redisClient.auth(rtg.auth.split(":")[1]);
+  } else {
+    redisClient = new Redis();
+  }
+
+  redisClient.on('connect', () => {
+      prettyLog('Redis connected');
+  });
+
+  return redisClient;
+
 }
-
-redisClient.on('connect', () => {
-    prettyLog('Redis connected');
-});
-
-export default redisClient;

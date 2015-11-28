@@ -1,93 +1,113 @@
-import cookieParser from 'socket.io-cookie';
-import redisClient from './redis';
+import createRedisClient from './redis';
+import { parse } from 'cookie';
+
+import { prettyLog, hash } from './utils';
+
+let redisClient = createRedisClient();
 
 exports = module.exports = (io) => {
 
-  io.use(cookieParser);
+  io.sockets.use((socket, next) => {
 
-  io.use((socket, next) => {
-    if (socket.request.headers.cookie) return next();
+    if(!socket.request.headers.cookie)
+      next(new Error('Authentication error'));
+    else {
+      const cookie = parse(socket.request.headers.cookie);
+      if(!cookie.AuthToken) {
+        next(new Error('Authentication error'));
+      } else {
+        redisClient.hget('authTokens', cookie.AuthToken, (err, user) => {
+          if(!user)
+            next(new Error('Authentication error'));
+          else {
+            prettyLog(`socket ${socket.id} authenticated`);
+            redisClient.hmget(`user:${user}`, ['NickName', 'Email'], (err, userData) => {
+              socket.data = {
+                user: { nickname: userData[0], email: userData[1] }
+              };
+              next();
+            });
+          }
+        });
+      }
+    }
   });
 
-  io.sockets.on('connection',  (socket) => {
-    // when the client emits 'enterRoom', this listens and executes
-    socket.on('enterRoom', (data) => {
-      // store the room name in the socket session for this client
-      socket.room = data.room;
-      socket.join(room);
-      // echo to client they've connected
-      socket.broadcast.to(room).emit('userJoined',data);
-    });
+  io.on('connection',  (socket) => {
 
-    // when the client emits 'sendchat', this listens and executes
-    socket.on('sendChat', (data) => {
-        let roomid = socket.room;
-        let msg = data.message;
-        let UserId = data.username;
-        if (!msg || !roomid){
-          //res.sendStatus(400);
-          return;
+    console.log("Client connected");
+
+    let roomSubscriber = createRedisClient();
+
+    // when the client emits 'join', this listens and executes
+    socket.on('join', (roomid) => {
+
+      let userid = hash(socket.data.user.email);
+
+      redisClient.sismember(`member:${userid}:rooms`, roomid, (err, isMember) => {
+        if(!isMember) {
+          prettyLog(`${socket.data.user.email} tried to join the bad room ${roomid}`, 'WARN');
+        } else {
+          prettyLog(`${socket.data.user.email} joined the room ${roomid}`);
+          socket.data.room = roomid
+          socket.join(socket.data.room);
+          io.sockets.in(socket.data.room).emit('userJoined',
+            JSON.stringify({
+              ServerTimestamp: new Date(),
+              Status: 'join',
+              User: socket.data.user
+            }));
+
+          roomSubscriber.subscribe(`room:${roomid}:messages`, () => {
+            prettyLog(`${socket.data.user.email} subscribed to room:${roomid}:messages`);
+          });
+
+          roomSubscriber.on('message', (channel, message) => {
+            prettyLog(`Message arrived, pushing to client...`);
+            socket.emit('chatUpdated', message);
+          });
         }
-        redisClient.hget('rooms', roomid, (err, reply) => {
-                if (err){
-                    console.log("Internal server error");
-                    //res.sendStatus(500);
-                }
-                else{
-                  let roomDataString = reply;
-                  let roomData = JSON.parse(roomDataString);
-                  if (roomData === null){
-                    //res.sendStatus(404);
-                    return;
-                  }
-                  let member = false;
-                  for (var j=0; j<roomData.Members.length; j++){
-                    if (roomData.Members[j] === UserId)
-                      member = true;
-                  }
-                  if (member){
-                    let messages = roomData.Messages;
-                    let currentDate = new Date();
-                    let datetime = currentDate.toISOString();
-                    let nmsg = {"Timestamp" : datetime, "User" : UserId, "Message" : msg};
-                    messages.push(nmsg);
-                    if (messages.length > 50)
-                      messages.splice(0,1);
-                    roomData.Messages=messages;
-                    roomDataString = JSON.stringify(roomData);
-                    redisClient.hset('rooms', roomid,roomDataString);
-                    /*
-                    let messagesToSend = [];
-                    for(var i=0; i<roomData.Messages.length; i++){
-                      messagesToSend.push({"user" : roomData.Messages[i].User, "timestamp" : roomData.Messages[i].Timestamp, "message" : roomData.Messages[i].Message});
-
-                    }*/
-                    socket.broadcast.to(socket.room).emit('updateChat', nmsg);
-                  }
-                  else{
-                    //res.sendStatus(204);
-                  }
-                }
       });
-
     });
 
-    socket.on('switchRoom', (data) => {
-      // leave the current room (stored in session)
-      socket.broadcast.to(socket.room).emit('userLeftRoom', data);
-      socket.leave(socket.room);
-      // join new room, received as function parameter
-      socket.join(data.room);
-      socket.room = data.room;
-      socket.broadcast.to(room).emit('userJoined',data);
-    });
-
-    // when the user disconnects.. perform this
     socket.on('disconnect', () => {
-       // leave the current room (stored in session)
-      socket.broadcast.to(socket.room).emit('userLeftRoom', data);
-      socket.leave(socket.room);
+
+      if(socket.data.room) {
+        socket.broadcast.to(socket.data.room).emit('userLeftRoom',
+          JSON.stringify({
+            ServerTimestamp: new Date(),
+            Status: 'leave',
+            User: socket.data.user
+          }));
+        socket.leave(socket.room);
+        prettyLog(`${socket.data.user.email} left the room ${socket.data.room}`);
+      }
+      roomSubscriber.disconnect();
+      prettyLog(`socket ${socket.id} disconnecting`);
+    });
+
+    socket.on('updateChat', (message) => {
+      if(!message || !message.Message)
+        return
+
+      let emailHash = hash(socket.data.user.email);
+
+      redisClient.hmget(`user:${emailHash}`, ['NickName', 'Email'], (err, data) => {
+        let serverTimestamp = new Date();
+        let nmsg = {
+          ServerTimestamp : serverTimestamp,
+          ClientTimestamp : message.ClientTimestamp,
+          User : { nickname: data[0], email: data[1] },
+          Message : message.Message
+        };
+
+        redisClient.zadd(`room:${socket.data.room}:messages`,
+          serverTimestamp.getTime(),
+          JSON.stringify(nmsg),
+          (err) => {
+            io.sockets.in(socket.data.room).emit('chatUpdated', JSON.stringify(nmsg));
+        });
+      });
     });
   });
-/*||||||||||||||||||||END SOCKETS||||||||||||||||||*/
 }

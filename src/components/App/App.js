@@ -83,7 +83,7 @@ class App extends Component {
     console.log(`Verify: sending token`);
     const resp = await ApiClient.verify(forgot, token);
     if(forgot) {
-      this.props.history.replaceState({ annoy: reset}, '/home');
+      this.props.history.replaceState({ annoy: reset }, '/home');
     }
   }
 
@@ -97,7 +97,12 @@ class App extends Component {
   render() {
     function createElement(Component, props) {
       // make sure you pass all the props in!
-      return <Component {...props} user={this.state.user} logout={this.logout.bind(this)} login={this.login.bind(this)} />
+      return <Component {...props}
+        user={this.state.user}
+        logout={this.logout.bind(this)}
+        login={this.login.bind(this)}
+        verify={this.verify.bind(this)}
+        />
     }
     return (
 

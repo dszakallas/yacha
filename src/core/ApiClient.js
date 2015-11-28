@@ -23,12 +23,24 @@ const ApiClient = {
 
   room: (id) => new Promise((resolve, reject) => {
     request
-      .get(apiUrl('/user/rooms/:id'))
+      .get(apiUrl(`/user/rooms/${id}`))
       /*.accept('application/json')*/
       .end((err, res) => {
         if (err) {
           reject(res);
         } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  messages: (roomId) => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl(`/user/rooms/${roomId}/messages`))
+      .end((err, res) => {
+        if(err)
+          reject(res);
+        else {
           resolve(res.body);
         }
       });

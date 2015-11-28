@@ -8,7 +8,7 @@ import crypto from 'crypto';
 import bodyParser from 'body-parser';
 import async from 'async'
 
-import redisClient from './redis';
+import createRedisClient from './redis';
 import emailClient from './email';
 import { prettyLog, hash, sha256Hash } from './utils';
 
@@ -36,7 +36,7 @@ api.use(cookieParser());
 api.use(bodyParser.json()); // for parsing application/json
 api.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
-
+let redisClient = createRedisClient();
 redisClient.hmset(`room:global`, {Private: false, Name: 'global'});
 
 
@@ -65,7 +65,8 @@ function checkAuthentication (req, res, cb, opts){
         redisClient.hdel('authTokens', authToken);
         cb(req, res, user);
       } else {
-        res.cookie('AuthToken', authToken, {path: '/api/'});
+        res.clearCookie('AuthToken');
+        res.cookie('AuthToken', authToken);
         res.set('X-Yacha-AuthToken', authToken);
         cb(req, res, user);
       }
@@ -109,10 +110,11 @@ api.post('/login',  (req,res) => {
             res.sendStatus(401);
           } else {
             let authToken = crypto.randomBytes(64).toString('hex');
-            res.cookie('AuthToken', authToken, {path: '/api/'});
+            res.clearCookie('AuthToken');
+            res.cookie('AuthToken', authToken);
             res.set('X-Yacha-AuthToken', authToken);
             redisClient.hset(`authTokens`, authToken, emailHash);
-            prettyLog(`/login: ${userData.email} logged in`);
+            prettyLog(`/login: ${userData.Email} logged in`);
             res.status(200).send({ email: userData.Email, nickname: userData.NickName });
           }
         }
@@ -133,8 +135,6 @@ api.post('/register',  (req,res) => {
   }
 
   let emailHash = hash(email);
-
-  console.log("id is: " + emailHash);
 
   redisClient.exists(`user:${emailHash}`, (err, exists) => {
     if(exists) {
@@ -180,7 +180,6 @@ api.post('/register',  (req,res) => {
 
 api.get('/user',  (req,res) => {
   checkAuthentication(req, res, (req, res, emailHash) => {
-    console.log("id is: " + emailHash);
     redisClient.hgetall(`user:${emailHash}`, (err, userData) => {
         if (err || !userData)
           sendInternalError(res);
@@ -397,41 +396,8 @@ api.get('/user/rooms/:roomid/messages', (req,res) => {
                   if(err)
                     sendInternalError(res);
                   else {
-                    let parsed = messages.map(
-                      (message) => { return JSON.parse(message);
-                        delete result.ServerTimestamp; //client dont need this
-                        return result;
-                    });
-                    let [...ids] = new Set(parsed.map((message) => { return message.User; }));
-
-                    let liftedUsers = {};
-
-                    for(let id of ids)
-                      liftedUsers[id] = '';
-
-                    async.parallel(ids,
-                    (id, cb) => {
-                      redis.hget(`user:${id}`, 'NickName', (err, nickname) => {
-                        if(nickname)
-                          liftedUsers[id] = nickname;
-                        cb(null); //fail silently here
-                      });
-                    },
-                    (err) => {
-                      if(err)
-                        sendInternalError(res);
-                      else {
-                        let results = parsed.map(
-                          (message) => {
-                            let userid = message.User;
-                            message.User = { id: userid };
-                            let nickname = liftedUsers[userid];
-                            if(nickname)
-                              message.User.nickname = nickname;
-                        });
-                        res.status(200).send(results);
-                      }
-                    });
+                    res.status(200).send(
+                      messages.map((message) => { return JSON.parse(message); }));
                   }
                 });
               }
@@ -467,23 +433,27 @@ api.post('/user/rooms/:roomid/messages', (req,res) => {
           else if(!isMember)
             res.sendStatus(404);
           else {
-            let serverTimestamp = new Date();
-            let nmsg = {
-              ServerTimestamp : serverTimestamp,
-              ClientTimestamp : clientTimestamp,
-              User : emailHash,
-              Message : msg
-            };
-            //return last 50 messages
-            redisClient.zadd(`room:${roomid}:messages`,
-              serverTimestamp.getTime(),
-              JSON.stringify(nmsg),
-              (err, messages) => {
-              if(err)
-                sendInternalError(res);
-              else {
-                res.sendStatus(204);
-              }
+            redisClient.hmget(`user:${emailHash}`, ['NickName', 'Email'], (err, data) => {
+              let serverTimestamp = new Date();
+              let nmsg = {
+                ServerTimestamp : serverTimestamp,
+                ClientTimestamp : clientTimestamp,
+                User : { nickname: data[0], email: data[1] },
+                Message : msg
+              };
+              redisClient.zadd(`room:${roomid}:messages`,
+                serverTimestamp.getTime(),
+                JSON.stringify(nmsg),
+                (err) => {
+                  if(err)
+                    sendInternalError(res);
+                  else {
+                    res.sendStatus(204);
+                    redisClient.publish(`room:${roomid}:messages`, JSON.stringify(nmsg), (err, reply) => {
+                      prettyLog(`${reply} client(s) are notified.`);
+                    });
+                  }
+              });
             });
           }
         });
@@ -903,6 +873,7 @@ api.post('/activate/send',  (req,res) => {
             sendInternalError(res);
           }
           else {
+            prettyLog(`Sending mail to ${email}`);
             let mailOptions = {
                 from: 'yacha ✔ <yacha@gmail.com>', // sender address
                 to: email, // list of receivers
@@ -933,11 +904,13 @@ api.post('/activate/verify',  (req,res) => {
       return;
     }
 
+
     redisClient.hget('activationTokens', token, (err, emailHash) => {
-      if(!emailHash)
+      if(!emailHash) {
+        prettyLog(`/activate/verify: token doens't exist`);
         res.sendStatus(400);
+      }
       else {
-        console.log("id is: " + emailHash);
         redisClient.multi()
           .hset(`user:${emailHash}`, 'Activated', 'true' )
           .hdel('activationTokens', token)
@@ -1015,7 +988,8 @@ api.post('/forgot/verify', (req,res) => {
           if(err)
             sendInternalError(res);
           else {
-            res.cookie('AuthToken', authToken, { path: '/api/'});
+            res.clearCookie('AuthToken');
+            res.cookie('AuthToken', authToken);
             res.set('X-Yacha-AuthToken', authToken);
             res.sendStatus(204);
           }

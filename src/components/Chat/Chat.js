@@ -10,95 +10,128 @@ import io from 'socket.io-client';
 @withStyles(styles)
 class Chat extends Component {
 
+
   constructor() {
     super();
 
     this.state = {
-
+      initialMessages: [],
+      timeline: [],
+      message: ''
     };
+
+    this.socket = io.connect();
   }
+
 
   async refreshRoom() {
 
   }
 
-  async componentDidMount() {
-    try {
-      let users = [];
-      const room = ApiClient.room(this.props.id);
-      const messages = ApiClient.messages(id);
-      for(let id of (await room).admins) {
-        try {
-          const user = await ApiClient.users(id);
-          users.push(Object.assign({ admin:true }, user));
-        } catch (err) {
-          console.warn(`Failed to identify user ${id}`);
-        }
-      }
-      this.setState({ room: await room, messages: await messages, users: users });
-    } catch (err) {
-      console.warn(`Error while fetching initial room data from server: ${err.status}`);
-      console.warn(err);
-    }
-
-    this.socket = io.connect();
+  joinRoom(socket) {
 
     socket.on('connect', () => {
       console.log("SocketClient connected to server");
 
-      socket.emit('enterRoom', this.props.id);
+      console.log(`Joining room ${this.props.params.roomid}`);
+      socket.emit('join', this.props.params.roomid);
 
     });
 
-    // socket.on('updateChat', (message) => {
-    //   if(message.User !== this.props.user.email) {
-    //     let found = null;
-    //     for(let cached of this.state.users) {
-    //       if(cached.email === message.User)
-    //         found = cached;
-    //     }
-    //     if(!found) {
-    //       //try to resolve, maybe a new user.
-    //
-    //     }
-    //     this.setState({
-    //       update(
-    //         this.state.users,
-    //         { $push: [] })
-    //       })
-    //   }
-    // }
+    socket.on('userJoined', (status) => {
+      console.log(status);
+      let parsed = JSON.parse(status);
+      console.log(`${parsed.User.nickname} joined`);
+      this.setState({timeline: this.state.timeline.concat([parsed])});
+    });
+
+    socket.on('userLeft', (status) => {
+      let parsed = JSON.parse(status);
+      console.log(`${parsed.User.nickname} left`);
+      this.setState({timeline: this.state.timeline.concat([parsed])});
+    });
+
+    socket.on('chatUpdated', (message) => {
+      console.log("Message arrived");
+      let parsed = JSON.parse(message);
+      this.setState({ timeline: this.state.timeline.concat([parsed])});
+    });
   }
 
-  // tryFetchUser(userId) {
-  //   for(let admin of admins) {
-  //     if(admin. === userId)
-  //   }
-  // }
+  async getRoomData() {
+    try {
+      let users = [];
+      const room = ApiClient.room(this.props.params.roomid);
+      const messages = ApiClient.messages(this.props.params.roomid);
+      this.setState({ room: await room, initialMessages: (await messages).reverse() });
+    } catch (err) {
+      console.error(`Error while fetching initial room data from server: ${err.status}`);
+      console.error(err);
+    }
+  }
+
+  async componentDidMount() {
+
+    this.joinRoom.call(this, this.socket);
+
+    this.getRoomData.call(this);
+
+  }
+
+  renderStatus(element) {
+    if(element.Status === 'join')
+      return (
+        <p className="chat-status">
+          <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+          <em>{ element.User.nickname } </em> joined the room
+        </p>
+      );
+    else if(element.Status === 'leave')
+      return (
+        <p className="chat-status">
+          <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+          <em>{ element.User.nickname } </em> left the room
+        </p>
+      );
+  }
+
+  /*
+{ user.admin ? <span className="glyphicon glyphicon-star" aria-hidden="true"></span> : null }
+  */
+
+
 
   renderChatList() {
+    return (
+      <div>
+      {
+        this.state.initialMessages.concat(this.state.timeline).map( (element) => {
+          return(
+            <div key={element.ServerTimestamp} className="chat-row">
+              {
+                element.Status
+                  ?
+                    this.renderStatus.call(this, element)
+                  :
+                    <div>
+                     <p className="chat-author">{ element.User.nickname } @ {element.ServerTimestamp}</p>
+                     <p className="chat-message">{ element.Message } </p>
+                    </div>
+              }
+            </div>
+          );
+        })
+      }
+      </div>
+    );
+  }
 
-    this.state.timeline.map( (element) => {
-      const user = this.tryFetchUser.call(this, element.User);
-      return (
-        <div className="chat-row">
-          {
-            element.status
-              ?
-                <p className="chat-status">
-                  <span className="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
-                  <em>{ user.nickname } { user.admin ? <span className="glyphicon glyphicon-star" aria-hidden="true"></span> : null }</em> joined the room
-                </p>
-              :
-                <div>
-                 <p className="chat-author">{ user.nickname } { user.admin ? <span className="glyphicon glyphicon-star" aria-hidden="true"></span> : null }</p>
-                 <p className="chat-message">{ element.Message }</p>
-                </div>
-          }
-        </div>
-      );
-    });
 
+  sendMessage(e) {
+    e.preventDefault();
+    let message = this.state.message;
+    this.socket.emit('updateChat', { Message: message, ClientTimestamp: new Date()});
+    this.setState({ message: '' });
   }
 
   render() {
@@ -112,12 +145,12 @@ class Chat extends Component {
         <hr></hr>
         <div className="row">
           <div className="col-xs-10">
-            <textarea className="form-control" rows="3"></textarea>
+            <textarea className="form-control" rows="3" value={this.state.message} onChange={(e) => this.setState({ message: e.target.value})}></textarea>
           </div>
           <div className="col-xs-2">
             <div className="row">
               <div className="col-sm-10">
-                <button className="btn btn-primary">Send</button>
+                <button disabled={this.state.message ? false : true} className="btn btn-primary" onClick={this.sendMessage.bind(this)}>Send</button>
                 <button className="btn"><span className="glyphicon glyphicon-cog" aria-hidden="true" /></button>
               </div>
             </div>

@@ -42,4 +42,4 @@ let httpserver = server.listen(server.get('port'), () => {
   }
 });
 
-socket(io.listen(httpserver));
+socket(io(httpserver));

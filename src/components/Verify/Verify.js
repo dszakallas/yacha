@@ -22,7 +22,7 @@ class Verify extends Component {
     const forgot = this.props.params.forgot ? true : false;
 
     try {
-      await this.props.verify(forgot, token);
+      await this.props.verify(forgot, this.props.params.token);
     } catch (err) {
       console.warn(`Verify: server returned error: ${err}`);
       this.setState({ error: true });
