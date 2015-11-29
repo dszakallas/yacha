@@ -9,12 +9,17 @@ import ApiClient from '../../core/ApiClient';
 @withStyles(styles)
 class Header extends Component {
 
+  async logout() {
+    await this.props.logout();
+    this.props.history.replaceState(null, "/gate");
+  }
+
 
   appNav() {
     return (
       <ul className="nav nav-pills pull-right">
-        <li className="btn"><Link to={`/home/profile`}>{this.props.user.nickname}</Link></li>
-        <li className="btn"><a onClick={this.props.logout}>Logout</a></li>
+        <li className="btn"><Link to={`/home/profile`}>{this.props.getUser().nickname}</Link></li>
+        <li className="btn"><a onClick={this.logout.bind(this)}>Logout</a></li>
       </ul>
     );
   }
@@ -31,7 +36,7 @@ class Header extends Component {
   render() {
     return (
       <div className="header">
-        { this.props.user ? this.appNav.call(this) : this.gateNav.call(this) }
+        { this.props.getUser() ? this.appNav.call(this) : this.gateNav.call(this) }
         <h3 className="text-muted"><Link to={`/home`}>Yacha</Link></h3>
       </div>
     );

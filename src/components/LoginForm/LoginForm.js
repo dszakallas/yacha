@@ -26,14 +26,28 @@ class LoginForm extends Component {
     } else {
       this.setState({ error: '' });
       console.log("submitting form");
+
+      let email = this.state.email;
+      let password = this.state.password
+
       try {
-        await this.props.login(this.state.email, this.state.password);
+        await this.props.login(email, password);
+
+        this.props.history.replaceState(null, '/home');
+
+        //const { location } = this.props
+
+        // if (location.state && location.state.nextPathname) {
+        //   this.history.replaceState(null, location.state.nextPathname)
+        // } else {
+        //   this.history.replaceState(null, '/')
+        // }
       } catch(err) {
         if(err.status === 401) {
           this.setState({ error: 'Invalid email or password' });
         } else {
           this.setState({ error: 'Something went wrong', email:'', password:'' });
-          console.warn(`LoginForm: server returned ${err}`);
+          console.error(`LoginForm: server returned ${err}`);
         }
       }
     }
