@@ -39,7 +39,7 @@ class Marketing extends Component {
               <img width={900} height={500} src={catdog} alt="A cat and a dog"/>
               <div className="carousel-caption cat-dog">
                 <h1>Theyve found each other on Yacha</h1>
-                <p><Link to={"/home/signup"} className="btn btn-lg btn-success" href="#" role="button">Sign up today</Link></p>
+                <p><Link to={"/gate/signup"} className="btn btn-lg btn-success" href="#" role="button">Sign up today</Link></p>
               </div>
             </CarouselItem>
           </Carousel>
