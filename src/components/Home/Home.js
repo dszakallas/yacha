@@ -4,7 +4,9 @@ import { Modal, Button, Dropdown, Alert } from 'react-bootstrap';
 
 import { Link } from 'react-router';
 
-import { ChatLink } from '../Links';
+import { hash } from '../../utils/utils';
+
+import { ChatLink, UserLink } from '../Links';
 
 import ApiClient from '../../core/ApiClient';
 
@@ -22,6 +24,8 @@ class Home extends Component {
     this.state = {
       rooms: [],
       friends: [],
+      invites: [],
+      requests: [],
 
       createRoomModalOpen: false,
       createRoomNameInput: '',
@@ -29,6 +33,8 @@ class Home extends Component {
       joinRoomTokenError: '',
 
       addFriendModalOpen: false,
+      addFriendModalEmailInput: '',
+      addFriendModalEmailError: ''
 
     }
 
@@ -101,15 +107,21 @@ class Home extends Component {
   }
 
   async loadStateFromServer() {
-    let rooms, friends;
     try {
-      rooms = await ApiClient.rooms();
-      friends = await ApiClient.friends();
-      this.setState({rooms: rooms, friends: friends});
+      let rooms = ApiClient.rooms();
+      let friends = ApiClient.friends();
+      let invites = ApiClient.invites();
+      let requests = ApiClient.requests();
+
+      this.setState({
+        rooms: await rooms,
+        friends: await friends,
+        invites: await invites,
+        requests: await requests
+      });
     } catch (err) {
-
+      console.error(err);
     }
-
   }
 
   componentDidMount() {
@@ -129,6 +141,18 @@ class Home extends Component {
     }
   }
 
+  addFriendModalOpen() {
+    this.setState({ addFriendModalOpen: true });
+  }
+
+  addFriendModalClose() {
+    this.setState({
+      addFriendModalOpen: false,
+      addFriendModalEmailInput: '',
+      addFriendModalEmailError: ''
+     });
+  }
+
   createRoomModalOpen() {
     this.setState({ createRoomModalOpen: true });
   }
@@ -142,12 +166,50 @@ class Home extends Component {
     });
   }
 
+  async inviteFriend() {
+    console.log("DASDAS");
+    if(this.state.addFriendModalEmailInput
+      && this.state.addFriendModalEmailInput.indexOf('@') !== -1){
+        console.log("Check Ok");
+        try {
+          await ApiClient.invite(hash(this.state.addFriendModalEmailInput));
+          const user = await ApiClient.user(hash(this.state.addFriendModalEmailInput));
+          let tmp = this.state.invites.slice(0);
+          tmp.push(user);
+          this.setState({ invites: tmp });
+          this.addFriendModalClose.call(this);
+        } catch(err) {
+          console.log("Err");
+          if(err.status == 404) {
+            this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} doesn't exist` });
+          } else if(err.status == 400) {
+            if(err.body.reasonCode == 20)
+              this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} is already your friend` });
+            else if(err.body.reasonCode == 21)
+              this.setState({ addFriendModalEmailError: `An invitation for ${this.state.addFriendModalEmailInput} is already pending` });
+            else if(err.body.reasonCode == 22)
+              this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} sent you a request already. Accept that to become friends!` });
+            else if(err.body.reasonCode == 23)
+              this.setState({ addFriendModalEmailError: `You can't invite yourself!` });
+            else {
+              console.error(err);
+            }
+          } else {
+            console.log(err);
+          }
+        }
+    } else {
+      this.setState({ addFriendModalEmailError: 'Enter a valid email address' });
+    }
+
+  }
+
   async joinRoom() {
     if(this.state.joinRoomTokenInput) {
       try {
         console.log("join room called");
         const room = await ApiClient.joinRoom(this.state.joinRoomTokenInput);
-        let new_ = this.state.rooms.splice(0, this.state.rooms.length);
+        let new_ = this.state.rooms.slice(0);
         new_.push(Object.assign(room, {admin: true}));
         this.setState({ rooms: new_ });
       } catch(err) {
@@ -174,7 +236,7 @@ class Home extends Component {
     try {
       console.log("Create room called");
       const room = await ApiClient.createRoom(this.state.createRoomNameInput);
-      let new_ = this.state.rooms.splice(0, this.state.rooms.length);
+      let new_ = this.state.rooms.slice(0);
       new_.push(Object.assign(room, {admin: true}));
       this.setState({ rooms: new_ });
     } catch(err) {
@@ -182,6 +244,19 @@ class Home extends Component {
     }
     this.createRoomModalClose.call(this);
 
+  }
+
+  async accept(userid) {
+    try {
+      await ApiClient.accept(userid);
+      let newFriends = this.state.invites.filter((user) => { return hash(user.email) === userid});
+      let newInvites = this.state.invites.filter((user) => { return hash(user.email) !== userid});
+      let tmp = this.state.friends.concat(newFriends);
+
+      this.setState({ friends: newFriends, invites: newInvites });
+    } catch(err) {
+      console.error(err);
+    }
   }
 
   renderSearch() {
@@ -241,8 +316,35 @@ class Home extends Component {
 
     let friends = this.state.friends.map((friend) => {
       return(
-        <tr>
-          <td>friend.nickname</td>
+        <tr key={friend.email}>
+          <td><ChatLink Private={true} id={hash(friend.email)}>{friend.nickname}</ChatLink></td>
+          <td></td>
+        </tr>
+      );
+    });
+
+    let requests = this.state.requests.map((request) => {
+      console.log(request);
+      return(
+        <tr className="warning" key={request.email}>
+          <td><UserLink email={request.email}>{request.nickname}</UserLink></td>
+          <td>
+            <button
+              onClick={(e) => { this.accept(hash(request.email))} }
+              className="btn btn-xs btn-success">
+              <span className="glyphicon glyphicon-ok" aria-hidden="true"></span>
+            </button>
+          </td>
+        </tr>
+      );
+    });
+
+    let invites = this.state.invites.map((invite) => {
+      console.log(invite);
+      return(
+        <tr className="info" key={invite.email}>
+          <td><UserLink email={invite.email}>{invite.nickname}</UserLink></td>
+          <td><span className="badge">sent</span></td>
         </tr>
       );
     });
@@ -257,17 +359,23 @@ class Home extends Component {
               <h1>Friends</h1>
             </div>
             <div className="col-xs-6 table-ops">
-              <h1 className="btn btn-default"><span className="glyphicon glyphicon-plus" aria-hidden="true"></span></h1>
+              <h1 className="btn btn-default" onClick={this.addFriendModalOpen.bind(this)}><span className="glyphicon glyphicon-plus" aria-hidden="true"></span></h1>
             </div>
           </div>
           <div className="row">
             <div className="col-xs-12">
               <div className="table-responsive">
-                <table className="table table-striped">
+                <table className="table table">
                   <thead>
+                  <tr>
+                    <th className="col-sm-10">Nickname</th>
+                    <th className="col-sm-2"></th>
+                  </tr>
                   </thead>
                   <tbody>
                   { friends }
+                  { invites }
+                  { requests }
                   </tbody>
                 </table>
               </div>
@@ -337,6 +445,28 @@ class Home extends Component {
 
         </Modal.Footer>
       </Modal>
+      <Modal show={this.state.addFriendModalOpen} onHide={this.addFriendModalClose.bind(this)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Invite a friend</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <h4>{"Enter the user's email address"}</h4>
+            <label htmlFor="addFriendModalEmailInput" className="sr-only">Email of the user</label>
+            <input
+              type="email"
+              className="form-control"
+              id="addFriendModalEmailInput"
+              placeholder="Email or nickname"
+              noValidate={true}
+              value={this.state.addFriendModalEmailInput}
+              onChange={(e) => this.setState({ addFriendModalEmailInput: e.target.value})} />
+            { this.state.addFriendModalEmailError ? <Alert bsStyle="danger" >{this.state.addFriendModalEmailError}</Alert> : '' }
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onClick={this.addFriendModalClose.bind(this)}>Close</Button>
+            <Button className ="btn btn-primary" onClick={this.inviteFriend.bind(this)}>Invite</Button>
+          </Modal.Footer>
+        </Modal>
     </div>
     );
   }

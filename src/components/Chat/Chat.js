@@ -22,13 +22,13 @@ class Chat extends Component {
   }
 
   async getRoomData(id, Private) {
+    console.log("getRoomData called");
     try {
-      const messages = ApiClient.messages(id, Private);
-      this.setState({ initialMessages: (await messages).reverse() });
-
+      const messages = await ApiClient.messages(id, Private);
+      this.setState({ initialMessages: messages.reverse() });
       if(!Private) {
-        const room = ApiClient.room(id);
-        this.setState({ room: await room });
+        const room = await ApiClient.room(id);
+        this.setState({ room: room });
       }
     } catch (err) {
       console.error(`Error while fetching initial room data from server: ${err.status}`);
@@ -55,7 +55,7 @@ class Chat extends Component {
   async componentDidMount() {
 
     let Private;
-    let id
+    let id;
 
     if(this.props.params.roomid) {
       console.log('Mounting chat room');
@@ -71,10 +71,10 @@ class Chat extends Component {
     }
 
     this.setState({ Private: Private });
-
+    //
     this.getRoomData.call(this, id, Private);
-
-    this.setupSockets.call(this, id, Private);
+    //
+    // this.setupSockets.call(this, id, Private);
 
   }
 

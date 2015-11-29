@@ -228,6 +228,60 @@ const ApiClient = {
       });
   }),
 
+  invites: () => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl('/user/invites'))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  requests: () => new Promise((resolve, reject) => {
+    request
+      .get(apiUrl('/user/requests'))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  invite: (userid) => new Promise((resolve, reject) => {
+    let encoded = encodeURIComponent(userid);
+    request
+      .post(apiUrl(`/user/invite/${encoded}`))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
+  accept: (userid) => new Promise((resolve, reject) => {
+    let encoded = encodeURIComponent(userid);
+    request
+      .post(apiUrl(`/user/accept/${encoded}`))
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
   registerAndSendActivation: (email, username, password) => new Promise((resolve, reject) => {
     request
       .post(apiUrl('/register'))

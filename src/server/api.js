@@ -731,7 +731,7 @@ api.get('/user/friends',  (req,res) => {
   });
 });
 
-api.get('/user/friends/invite',  (req,res) => {
+api.get('/user/invites',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     redisClient.smembers(`user:${emailHash}:invites`, (err, invites) => {
@@ -743,18 +743,18 @@ api.get('/user/friends/invite',  (req,res) => {
         res.status(200).send(results);
       });
     });
-    console.log('/api/user/friends/invite GET');
+    console.log('/api/user/invites GET');
   });
 });
 
-api.post('/user/friends/invite/:userid',  (req,res) => {
+api.post('/user/invite/:userid',  (req,res) => {
   checkAuthentication(req,res, (req, res, emailHash) => {
 
     let userid = req.params.userid;
 
     //funny user
     if(userid == emailHash) {
-      res.sendStatus(400);
+      res.status(400).send({ reasonCode: 23});
     } else {
       redisClient.exists(`user:${userid}`, (err, exists) => {
         if(!exists) {
@@ -787,11 +787,11 @@ api.post('/user/friends/invite/:userid',  (req,res) => {
         }
       });
     }
-    console.log('/api/user/friends/invite/:uid POST');
+    console.log('/api/user/invite/:uid POST');
   });
 });
 
-api.get('/user/friends/invite/requests',  (req,res) => {
+api.get('/user/requests',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     redisClient.smembers(`user:${emailHash}:requests`, (err, requests) => {
@@ -803,11 +803,11 @@ api.get('/user/friends/invite/requests',  (req,res) => {
         res.status(200).send(results);
       });
     });
-    console.log('/api/user/friends/invite/requests GET');
+    console.log('/api/user/requests GET');
   });
 });
 
-api.post('/user/friends/invite/requests/:userid',  (req,res) => {
+api.post('/user/accept/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     let userid = req.params.userid;
@@ -826,7 +826,7 @@ api.post('/user/friends/invite/requests/:userid',  (req,res) => {
           });
       }
     });
-    console.log('/api/user/friends/invite/requests/:uid POST');
+    console.log('/api/user/accept/:uid POST');
   });
 });
 
