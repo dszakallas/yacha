@@ -249,8 +249,12 @@ class Home extends Component {
   async accept(userid) {
     try {
       await ApiClient.accept(userid);
-      let newFriends = this.state.requests.filter((user) => { return hash(user.email) === userid});
-      let newInvites = this.state.requests.filter((user) => { return hash(user.email) !== userid});
+      let newFriends = this.state.requests.filter((user) => {
+        console.log("EQ " + hash(user.email) + ' ' + userid);
+        return hash(user.email) === userid});
+      let newInvites = this.state.requests.filter((user) => {
+        console.log("NEQ " + hash(user.email) + ' ' + userid);
+        return hash(user.email) !== userid});
       let tmp = this.state.friends.concat(newFriends);
 
       this.setState({ friends: newFriends, requests: newRequests });
