@@ -71,10 +71,10 @@ class Chat extends Component {
     }
 
     this.setState({ Private: Private });
-    //
+
     this.getRoomData.call(this, id, Private);
-    //
-    // this.setupSockets.call(this, id, Private);
+
+    this.setupSockets.call(this, id, Private);
 
   }
 
