@@ -59,10 +59,10 @@ class Room extends Component {
           } else if(err.body.reasonCode == 1) {
             this.setState({ adminInviteUserError: `${this.state.adminInviteUserInput} is already a member`});
           } else {
-            console.error(error);
+            console.error(err);
           }
         } else {
-          console.error(error);
+          console.error(err);
         }
       }
     }

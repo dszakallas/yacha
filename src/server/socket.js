@@ -98,7 +98,7 @@ exports = module.exports = (io) => {
       socket.broadcast.to(socket.data.room).emit('userLeft',
         JSON.stringify({
           ServerTimestamp: new Date(),
-          Status: 'join',
+          Status: 'leave',
           User: socket.data.user
         }));
       let room = socket.data.room;

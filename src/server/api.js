@@ -923,7 +923,7 @@ api.post('/activate/send',  (req,res) => {
                 from: 'yacha ✔ <yacha@yacha.herokuapp.com>', // sender address
                 to: email, // list of receivers
                 subject: 'Activate your account', // Subject line
-                text: 'Your activation token is \n' + token
+                text: 'Click here: ' + "http://" + (process.env.HOSTNAME ? process.env.HOSTNAME : "localhost:5000") + "/#/gate/verify/" + token
             };
             // send mail with defined transport object
             emailClient.sendMail(mailOptions, function(error, info){
@@ -995,7 +995,7 @@ api.post('/forgot/send',  (req,res) => {
               from: 'yacha ✔ <yacha@yacha.herokuapp.com>', // sender address
               to: email, // list of receivers
               subject: 'Password reset token', // Subject line
-              text: 'You can login with this token: \n' + token
+              text: 'You can login here: ' + "http://" + (process.env.HOSTNAME ? process.env.HOSTNAME : "localhost:5000") + "/#/gate/verify/" + token + "/forgot"
           };
           // send mail with defined transport object
           emailClient.sendMail(mailOptions, function(error, info){
