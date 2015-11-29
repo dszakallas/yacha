@@ -2,10 +2,11 @@ import React, { Component } from 'react';
 
 import { Modal, Button, Dropdown, Alert } from 'react-bootstrap';
 
-
 import { Link } from 'react-router';
 
 import ApiClient from '../../core/ApiClient';
+
+import io from 'socket.io-client';
 
 import withStyles from '../../decorators/withStyles';
 import styles from './Home.less';
@@ -27,9 +28,75 @@ class Home extends Component {
 
       addFriendModalOpen: false,
 
-      socketReconnect: false
-
     }
+
+    this.socket = null;
+    this.userJoinedHandler = null;
+    this.userLeftHandler = null;
+    this.chatUpdatedHandler = null;
+  }
+
+  setUserJoined(handler) {
+
+    this.userJoinedHandler = handler ? handler : null;
+  }
+
+  setUserLeft(handler) {
+    this.userLeftHandler = handler ? handler : null;
+  }
+
+  setChatUpdated(handler) {
+    console.log(handler);
+    this.chatUpdatedHandler = handler ? handler : null;
+  }
+
+  setupSocket(socket) {
+
+    socket.on('disconnect', () => {
+      console.log("SocketClient disconnected from server ");
+
+    });
+
+    socket.on('connect', () => {
+      console.log("SocketClient connected to server");
+
+    });
+
+    socket.on('userJoined', (status) => {
+      console.log(status);
+      let parsed = JSON.parse(status);
+      console.log(`${parsed.User.nickname} joined`);
+
+      if(!this.userJoinedHandler) {
+        console.log("No one is listening")
+      } else {
+        this.userJoinedHandler(parsed);
+      }
+
+
+    });
+
+    socket.on('userLeft', (status) => {
+      let parsed = JSON.parse(status);
+      console.log(`${parsed.User.nickname} left`);
+
+      if(!this.userLeftHandler) {
+        console.log("No one is listening")
+      } else {
+        this.userLeftHandler(parsed);
+      }
+    });
+
+    socket.on('chatUpdated', (message) => {
+      console.log("Message arrived");
+      let parsed = JSON.parse(message);
+
+      if(!this.chatUpdatedHandler) {
+        console.log("No one is listening")
+      } else {
+        this.chatUpdatedHandler(parsed);
+      }
+    });
   }
 
   async loadStateFromServer() {
@@ -46,7 +113,19 @@ class Home extends Component {
 
   componentDidMount() {
     console.log("Mounting home");
+
     this.loadStateFromServer.call(this);
+
+    let socket = this.socket = io.connect();
+    this.setupSocket.call(this, socket);
+
+  }
+
+  componentWillUnmount() {
+    console.log("Unmounting home");
+    if(this.socket) {
+      this.socket.io.disconnect();
+    }
   }
 
   createRoomModalOpen() {
@@ -135,7 +214,16 @@ class Home extends Component {
   }
 
   render() {
-    return this.props.children ? this.props.children : this.renderHome.call(this);
+    return this.props.children
+      ? React.cloneElement(
+        this.props.children,
+        {
+          setUserJoined: this.setUserJoined.bind(this),
+          setUserLeft: this.setUserLeft.bind(this),
+          setChatUpdated: this.setChatUpdated.bind(this),
+          socket: this.socket
+        })
+      : this.renderHome.call(this);
   }
 
 

@@ -5,7 +5,7 @@ import ApiClient from '../../core/ApiClient';
 import withStyles from '../../decorators/withStyles';
 import styles from './Chat.less';
 
-import io from 'socket.io-client';
+
 
 @withStyles(styles)
 class Chat extends Component {
@@ -23,39 +23,20 @@ class Chat extends Component {
 
   setupSocket() {
 
-    let socket = this.socket = io.connect();
-
-    socket.on('disconnect', () => {
-      console.log("SocketClient disconnected from server ");
-
+    this.props.setUserJoined((m) => {
+      this.setState({timeline: this.state.timeline.concat([m])});
+    });
+    this.props.setUserLeft((m) => {
+      this.setState({timeline: this.state.timeline.concat([m])});
+    });
+    this.props.setChatUpdated((m) => {
+      console.log("wat");
+      this.setState({ timeline: this.state.timeline.concat([m])});
     });
 
-    socket.on('connect', () => {
-      console.log("SocketClient connected to server");
+    console.log("Handlers set. Joining room");
 
-      console.log(`Joining room ${this.props.params.roomid}`);
-      socket.emit('join', this.props.params.roomid);
-
-    });
-
-    socket.on('userJoined', (status) => {
-      console.log(status);
-      let parsed = JSON.parse(status);
-      console.log(`${parsed.User.nickname} joined`);
-      this.setState({timeline: this.state.timeline.concat([parsed])});
-    });
-
-    socket.on('userLeft', (status) => {
-      let parsed = JSON.parse(status);
-      console.log(`${parsed.User.nickname} left`);
-      this.setState({timeline: this.state.timeline.concat([parsed])});
-    });
-
-    socket.on('chatUpdated', (message) => {
-      console.log("Message arrived");
-      let parsed = JSON.parse(message);
-      this.setState({ timeline: this.state.timeline.concat([parsed])});
-    });
+    this.props.socket.emit('join', this.props.params.roomid);
   }
 
   async getRoomData() {
@@ -73,7 +54,7 @@ class Chat extends Component {
 
   async componentDidMount() {
 
-    console.log('component Mounting');
+    console.log('Chatroom mounting');
 
     this.setupSocket.call(this);
 
@@ -82,10 +63,16 @@ class Chat extends Component {
   }
 
   async componentWillUnmount() {
-    console.log('component Unmunting');
+    console.log('Chat room unmounting...');
 
-    this.socket.emit('leave');
-    this.socket.io.disconnect();
+    this.props.setUserJoined();
+    this.props.setUserLeft();
+    this.props.setChatUpdated();
+
+    console.log("Handlers torn down. Leaving room...");
+
+    this.props.socket.emit('leave');
+
   }
 
   renderStatus(element) {
@@ -140,7 +127,7 @@ class Chat extends Component {
   sendMessage(e) {
     e.preventDefault();
     let message = this.state.message;
-    this.socket.emit('updateChat', { Message: message, ClientTimestamp: new Date()});
+    this.props.socket.emit('updateChat', { Message: message, ClientTimestamp: new Date()});
     this.setState({ message: '' });
   }
 
