@@ -6,8 +6,7 @@ export default function createRedisClient(cb) {
 
   let redisClient;
   if (process.env.REDISCLOUD_URL) {
-    let rtg   = url.parse(process.env.REDISCLOUD_URL);
-    redisClient = new Redis(rtg.port, rtg.hostname, rtg.auth.split(":")[1]);
+    redisClient = new Redis(process.env.REDISCLOUD_URL);
   } else {
     redisClient = new Redis();
   }
