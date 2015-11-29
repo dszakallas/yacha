@@ -90,7 +90,7 @@ const ApiClient = {
 
     if (storage.user) {
       let user = JSON.parse(storage.user);
-      if(user.email && user.nickname) {
+      if(user && user.email && user.nickname) {
         resolve(JSON.parse(user));
         ApiClient.onChange(null, user);
         return;
