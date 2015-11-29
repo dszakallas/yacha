@@ -1,7 +1,7 @@
 import createRedisClient from './redis';
 import { parse } from 'cookie';
 
-import { prettyLog, hash } from './utils';
+import { prettyLog, hash } from '../utils/utils';
 
 let redisClient = createRedisClient();
 

@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import url from 'url';
-import { prettyLog } from './utils';
+import { prettyLog } from '../utils/utils';;
 
 export default function createRedisClient() {
 

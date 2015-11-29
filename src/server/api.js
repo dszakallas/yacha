@@ -10,7 +10,7 @@ import async from 'async'
 
 import createRedisClient from './redis';
 import emailClient from './email';
-import { prettyLog, hash, sha256Hash } from './utils';
+import { prettyLog, hash, sha256Hash } from '../utils/utils';
 
 prettyLog('                        888             ');
 prettyLog('                        888             ');
@@ -262,8 +262,8 @@ api.get('/user/rooms/:roomid', (req,res) => {
           (cb) => {
             redisClient.smembers(`room:${roomid}:admins`, (err, adminIds) => {
               async.map(adminIds, (adminId, cb_) => {
-                redisClient.hget(`user:${adminId}`, 'NickName', (err, nickname) => {
-                  cb_(err, { id: adminId, nickname: nickname });
+                redisClient.hmget(`user:${adminId}`, ['NickName', 'Email'], (err, data) => {
+                  cb_(err, { email: data[1], nickname: data[0] });
                 });
               }, (err, admins) => {
                 if(admins)
@@ -275,8 +275,8 @@ api.get('/user/rooms/:roomid', (req,res) => {
           (cb) => {
             redisClient.smembers(`room:${roomid}:members`, (err, memberIds) => {
               async.map(memberIds, (memberId, cb_) => {
-                redisClient.hget(`user:${memberId}`, 'NickName', (err, nickname) => {
-                  cb_(err, { id: memberId, nickname: nickname });
+                redisClient.hmget(`user:${memberId}`, ['NickName', 'Email'], (err, data) => {
+                  cb_(err, { email: data[1], nickname: data[0] });
                 });
               }, (err, members) => {
                 if(members)
@@ -303,15 +303,17 @@ api.delete('/user/rooms/:roomid',  (req,res) => {
     let roomid = req.params.roomid;
 
     redisClient.sismember(`member:${emailHash}:rooms`, roomid, (err, isMember) => {
-      if(err)
+      if(err) {
         sendInternalError(res);
+      }
       else if(!isMember) {
         res.sendStatus(404);
       }
       else {
-        redisClient.smembers(`room:${roomid}:admins`, emailHash, (err, admins) => {
-          if(err)
+        redisClient.smembers(`room:${roomid}:admins`, (err, admins) => {
+          if(err) {
             sendInternalError(res);
+          }
           else {
             if(admins.indexOf(emailHash) !== -1 && admins.length === 1) {
               //sole owner
@@ -334,35 +336,50 @@ api.delete('/user/rooms/:roomid',  (req,res) => {
         });
       }
     });
-    console.log('/api/ser/rooms/:roomid DELETE');
+    console.log('/api/user/rooms/:roomid DELETE');
   });
 });
 
-api.post('/user/rooms/:roomid/join',  (req,res) => {
+api.post('/user/join',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
-    let roomid = req.params.roomid;
+    let token = req.body.token;
 
-    redisClient.sismember(`member:${emailHash}:rooms`, roomid, (err, isMember) => {
-      if(err)
-        sendInternalError(res);
-      else if(isMember)
-        res.status(400).send({"reason" : 11});
-      else {
-        redisClient.sismember(`rooms`, roomid, (err, roomExists) => {
-          if(err)
+    redisClient.hget(`inviteTokens`, token, (err, roomid) => {
+      if(!roomid) {
+        res.sendStatus(400).send({"reason" : 12});
+      } else {
+        redisClient.hgetall(`room:${roomid}`, (err, roomData) => {
+          if(err) {
             sendInternalError(res);
-          else if(!roomExists)
+          }
+          if(!roomData) {
             res.sendStatus(404);
-          else {
-            redisClient.multi()
-              .sadd(`member:${emailHash}:rooms`, roomid)
-              .sadd(`room:${roomid}:members`, emailHash)
-              .exec((err) => {
-                if(err)
-                  sendInternalError(res);
-                else
-                  res.sendStatus(204);
-              });
+          } else {
+            redisClient.sismember(`room:${roomid}:members`, emailHash, (err, isMember) => {
+              if(err)
+                sendInternalError(res);
+              else if(isMember)
+                res.status(400).send({"reason" : 11});
+              else {
+                redisClient.multi()
+                  .sadd(`member:${emailHash}:rooms`, roomid)
+                  .sadd(`room:${roomid}:members`, emailHash)
+                  .hdel(`inviteTokens`, token)
+                  .exec((err) => {
+                    if(err)
+                      sendInternalError(res);
+                    else {
+                      let rData = {
+                        "name" : roomData.Name,
+                        "id" : roomid,
+                        "private" : false,
+                        "admin" : false
+                      };
+                      res.status(200).send(rData);
+                    }
+                  });
+              }
+            });
           }
         });
       }
@@ -374,8 +391,6 @@ api.post('/user/rooms/:roomid/join',  (req,res) => {
 api.get('/user/rooms/:roomid/messages', (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     let roomid = req.params.roomid;
-
-    console.log(roomid);
 
     redisClient.exists(`room:${roomid}`, (err, roomExists) => {
       if(err)
@@ -513,7 +528,7 @@ api.post('/user/admin/rooms',  (req,res) => {
           res.status(201).send(rData);
         }
       });
-    console.log('/apiuser/admin/rooms POST');
+    console.log('/api/user/admin/rooms POST');
   });
 });
 
@@ -544,12 +559,10 @@ api.put('/user/admin/rooms/:roomid',  (req,res) => {
   });
 });
 
-api.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
+api.post('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
   let userid = req.params.userid;
   let roomid = req.params.roomid;
-
-
 
   redisClient.sismember(`admin:${emailHash}:rooms`, roomid, (err, isAdmin) => {
     if(!isAdmin) {
@@ -566,22 +579,31 @@ api.put('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
               redisClient.hgetall(`room:${roomid}`, (err, roomData) => {
                 redisClient.hgetall(`user:${userid}`, (err, userData) => {
 
-                  let mailOptions = {
-                     from: 'yacha ✔ <yacha@yachamail.com>', // sender address
-                     to: userData.Email, // list of receivers
-                     subject: 'Yacha chat room invitation', // Subject line
-                     text: `Dear ${userData.NickName},\nYou were invited to the ${roomData.Name} room.\nThe room id is: ${roomid} .`
-                  };
+                  let token = crypto.randomBytes(64).toString('hex');
 
-                  emailClient.sendMail(mailOptions, function(error, info){
-                     if(error){
-                         res.sendStatus(500);
-                         return console.log(error);
-                     }
-                     console.log('Message sent: ' + info.response);
-                     res.sendStatus(204);
+                  redisClient.hset(`inviteTokens`, token, roomid, (err) => {
+                    if(err) {
+                      console.log(res);
+                      sendInternalError(res);
+                    } else {
+                      let mailOptions = {
+                         from: 'yacha ✔ <yacha@yacha.herokuapp.com>', // sender address
+                         to: userData.Email, // list of receivers
+                         subject: 'Yacha chat room invitation', // Subject line
+                         text: `Dear ${userData.NickName},\nYou were invited to the ${roomData.Name} room. Your token is: \n${token}`
+                      };
 
-                    });
+                      emailClient.sendMail(mailOptions, function(error, info){
+                         if(error){
+                             res.sendStatus(500);
+                             return console.log(error);
+                         }
+                         console.log('Message sent: ' + info.response);
+                         res.sendStatus(204);
+
+                      });
+                    }
+                  });
                   });
                 });
               }
@@ -879,10 +901,10 @@ api.post('/activate/send',  (req,res) => {
           else {
             prettyLog(`Sending mail to ${email}`);
             let mailOptions = {
-                from: 'yacha ✔ <yacha@gmail.com>', // sender address
+                from: 'yacha ✔ <yacha@yacha.herokuapp.com>', // sender address
                 to: email, // list of receivers
-                subject: 'Hello ✔', // Subject line
-                text: 'Activation a tokennel ' + token
+                subject: 'Activate your account', // Subject line
+                text: 'Your activation token is \n' + token
             };
             // send mail with defined transport object
             emailClient.sendMail(mailOptions, function(error, info){
@@ -951,10 +973,10 @@ api.post('/forgot/send',  (req,res) => {
           sendInternalError(res);
         else {
           let mailOptions = {
-              from: 'yacha ✔ <yacha@gmail.com>', // sender address
+              from: 'yacha ✔ <yacha@yacha.herokuapp.com>', // sender address
               to: email, // list of receivers
-              subject: 'Hello ✔', // Subject line
-              text: 'Forgot a tokennel ' + token
+              subject: 'Password reset token', // Subject line
+              text: 'You can login with this token: \n' + token
           };
           // send mail with defined transport object
           emailClient.sendMail(mailOptions, function(error, info){

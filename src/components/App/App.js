@@ -13,6 +13,7 @@ import Forgot from '../Forgot';
 import Home from '../Home';
 import Chat from '../Chat';
 import Room from '../Room';
+import Profile from '../Profile';
 
 import ApiClient from '../../core/ApiClient';
 
@@ -21,6 +22,11 @@ import Footer from '../Footer';
 
 
 const Layout = React.createClass({
+
+  componentDidMount() {
+    console.log("Header mounted");
+  },
+
   render: function(){
     return (
       <div>
@@ -39,6 +45,7 @@ class App extends Component {
     super();
 
     this.state = {
+      user: ApiClient.getUser()
     };
 
   }
@@ -47,60 +54,80 @@ class App extends Component {
     history: createBrowserHistory()
   }
 
-  componentDidMount() {
-
-    ApiClient.user().then(
-      (user) => {
-        console.log(`${user.nickname} authenticated`);
-        this.setState({ user: user});
-      },
-      (err) => {
-        if(err.status === 401) {
-          console.log("No user authenticated for this agent");
-        } else {
-          console.warn(`AppRouter: Server returned error ${err}`);
-        }
-      });
+  componentWillMount() {
+    //ApiClient.onChange = this.updateAuth.bind(this);
+    ApiClient.login();
   }
 
-  enterHome(nextState, replaceState) {
-    /*if(!this.state.user) {
+  componentWillUnmount() {
+    ApiClient.onChange = () => {};
+  }
+
+  componentDidMount() {
+  }
+
+  updateAuth(err, user) {
+    this.setState({
+      user: user
+    });
+  }
+
+  authenticate(nextState, replaceState) {
+
+    if(!ApiClient.loggedIn()) {
       replaceState({ nextPathname: nextState.location.pathname }, '/gate');
-    }*/
+    }
+
+
+    // if(!this.state.user) {
+    //   ApiClient.user().then(
+    //     (user) => {
+    //       console.log(`${user.nickname} authenticated`);
+    //       this.setState({user: user});
+    //       cb();
+    //     },
+    //     (err) => {
+    //       if(err.status === 401) {
+    //         console.log("No user authenticated for this agent");
+    //       } else {
+    //         console.warn(`AppRouter: Server returned error ${err}`);
+    //       }
+    //       replaceState({ nextPathname: nextState.location.pathname }, '/gate');
+    //       cb();
+    //   });
+    //
+    //
+    // }
   }
 
   enterChat(nextState, replaceState) {
     console.log("Entering chat");
   }
 
+  getUser() {
+    return ApiClient.getUser();
+  }
+
   async login(email, password) {
     const user = await ApiClient.login(email, password);
     console.log(`${user.nickname} logged in`);
-    this.setState({ user: user});
-    this.props.history.replaceState(null, "/home");
     return user;
   }
 
   async verify(forgot, token) {
     console.log(`Verify: sending token`);
     const resp = await ApiClient.verify(forgot, token);
-    if(forgot) {
-      this.props.history.replaceState({ annoy: reset }, '/home');
-    }
   }
 
   async logout() {
     await ApiClient.logout();
-    console.log(`${this.state.user.nickname} logged out`);
-    this.setState({ user: null });
-    this.props.history.replaceState(null, "/gate");
   }
 
   render() {
     function createElement(Component, props) {
       // make sure you pass all the props in!
       return <Component {...props}
-        user={this.state.user}
+        getUser={this.getUser.bind(this)}
         logout={this.logout.bind(this)}
         login={this.login.bind(this)}
         verify={this.verify.bind(this)}
@@ -111,10 +138,11 @@ class App extends Component {
       <div className="container">
         <Router createElement={createElement.bind(this)}>
           <Route path="/" component={Layout} >
-            <IndexRoute component={Home} onEnter={this.enterHome.bind(this)}/>
-            <Route path="home" component={Home} onEnter={this.enterHome.bind(this)}>
+            <IndexRoute component={Home} onEnter={this.authenticate.bind(this)}/>
+            <Route path="home" component={Home} onEnter={this.authenticate.bind(this)}>
               <Route path="chat/:roomid" component={Chat} />
               <Route path="room/:roomid" component={Room} />
+              <Route path="profile(/:userid)" component={Profile} />
             </Route>
             <Route path="gate" component={GatePage}>
               <IndexRoute component={Marketing} />

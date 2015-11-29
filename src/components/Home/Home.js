@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { Modal, Button, Dropdown } from 'react-bootstrap';
+import { Modal, Button, Dropdown, Alert } from 'react-bootstrap';
 
 
 import { Link } from 'react-router';
@@ -22,10 +22,12 @@ class Home extends Component {
 
       createRoomModalOpen: false,
       createRoomNameInput: '',
+      joinRoomTokenInput: '',
+      joinRoomTokenError: '',
 
       addFriendModalOpen: false,
 
-      socketReconnect: false,
+      socketReconnect: false
 
     }
   }
@@ -43,6 +45,7 @@ class Home extends Component {
   }
 
   componentDidMount() {
+    console.log("Mounting home");
     this.loadStateFromServer.call(this);
   }
 
@@ -51,7 +54,40 @@ class Home extends Component {
   }
 
   createRoomModalClose() {
-    this.setState({ createRoomModalOpen: false, createRoomNameInput: '' });
+    this.setState({
+      createRoomModalOpen: false,
+      createRoomNameInput: '',
+      joinRoomTokenInput: '',
+      joinRoomTokenError: ''
+    });
+  }
+
+  async joinRoom() {
+    if(this.state.joinRoomTokenInput) {
+      try {
+        console.log("join room called");
+        const room = await ApiClient.joinRoom(this.state.joinRoomTokenInput);
+        let new_ = this.state.rooms.splice(0, this.state.rooms.length);
+        new_.push(Object.assign(room, {admin: true}));
+        this.setState({ rooms: new_ });
+      } catch(err) {
+        if(err.status == 400) {
+          if(err.body.reasonCode == 11) {
+            this.setState( { joinRoomTokenError: 'You are already a member'});
+          } else if(err.body.reasonCode == 12) {
+            this.setState( { joinRoomTokenError: 'Invalid token'} );
+          } else {
+            console.error(err);
+          }
+        } else if (err.status == 404) {
+          this.setState( { joinRoomTokenError: 'This room was probably deleted'});
+        } else {
+          console.error(err);
+        }
+      }
+    } else {
+      this.setState( { joinRoomTokenError: 'Enter your token'});
+    }
   }
 
   async createRoom() {
@@ -59,7 +95,7 @@ class Home extends Component {
       console.log("Create room called");
       const room = await ApiClient.createRoom(this.state.createRoomNameInput);
       let new_ = this.state.rooms.splice(0, this.state.rooms.length);
-      new_.push(room);
+      new_.push(Object.assign(room, {admin: true}));
       this.setState({ rooms: new_ });
     } catch(err) {
       console.warn(`Home: Server returned ${err}`);
@@ -181,10 +217,10 @@ class Home extends Component {
     </div>
     <Modal show={this.state.createRoomModalOpen} onHide={this.createRoomModalClose.bind(this)}>
         <Modal.Header closeButton>
-          <Modal.Title>Create a new room</Modal.Title>
+          <Modal.Title>Add a room</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <h4>Enter a name for the room</h4>
+          <h4>You can create a new room by entering a name</h4>
           <label htmlFor="createRoomInputRoomName" className="sr-only">Room name</label>
           <input
             type="text"
@@ -193,10 +229,23 @@ class Home extends Component {
             placeholder="Room name"
             value={this.state.createRoomNameInput}
             onChange={(e) => this.setState({ createRoomNameInput: e.target.value})} />
+          <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
+          <hr></hr>
+          <h4>{"... or enter your token here, if someone invited you someplace"}</h4>
+          { this.state.joinRoomTokenError ? <Alert bsStyle="danger" >{this.state.joinRoomTokenError}</Alert> : '' }
+          <label htmlFor="joinRoomInputRoomToken" className="sr-only">Token</label>
+          <input
+            type="text"
+            className="form-control"
+            id="joinRoomInputRoomToken"
+            placeholder="Token"
+            value={this.state.joinRoomTokenInput}
+            onChange={(e) => this.setState({ joinRoomTokenInput: e.target.value})} />
+          <Button className ="btn btn-success" onClick={this.joinRoom.bind(this)}>Join</Button>
         </Modal.Body>
         <Modal.Footer>
           <Button onClick={this.createRoomModalClose.bind(this)}>Close</Button>
-          <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
+
         </Modal.Footer>
       </Modal>
     </div>
