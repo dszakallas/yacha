@@ -36,7 +36,7 @@ api.use(cookieParser());
 api.use(bodyParser.json()); // for parsing application/json
 api.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
-let redisClient = createRedisClient();
+let redisClient = createRedisClient(() => prettyLog("Redis client connected: api"));
 redisClient.hmset(`room:global`, {Private: false, Name: 'global'});
 
 
@@ -747,7 +747,7 @@ api.get('/user/friends/invite',  (req,res) => {
   });
 });
 
-api.put('/user/friends/invite/:userid',  (req,res) => {
+api.post('/user/friends/invite/:userid',  (req,res) => {
   checkAuthentication(req,res, (req, res, emailHash) => {
 
     let userid = req.params.userid;
@@ -760,16 +760,34 @@ api.put('/user/friends/invite/:userid',  (req,res) => {
         if(!exists) {
           res.sendStatus(404);
         } else {
-          redisClient.multi()
-            .sadd(`user:${emailHash}:invites`, userid)
-            .sadd(`user:${userid}:requests`, emailHash)
-            .exec( (err) => {
-              res.sendStatus(204);
-            });
+          redisClient.sismember(`user:${emailHash}:friends`, userid, (err, isFriend) => {
+            if(isFriend) {
+              res.status(400).send({ reasonCode: 20});
+            } else {
+              redisClient.sismember(`user:${emailHash}:invites`, userid, (err, isAlreadyInvited) => {
+                if(isAlreadyInvited) {
+                  res.status(400).send({ reasonCode: 21});
+                } else {
+                  redisClient.sismember(`user:${emailHash}:requests`, userid, (err, isRequested) => {
+                    if(isRequested) {
+                      res.status(400).send({ reasonCode: 22});
+                    } else {
+                      redisClient.multi()
+                        .sadd(`user:${emailHash}:invites`, userid)
+                        .sadd(`user:${userid}:requests`, emailHash)
+                        .exec( (err) => {
+                          res.sendStatus(204);
+                        });
+                    }
+                  });
+                }
+              });
+            }
+          });
         }
       });
     }
-    console.log('/api/user/friends/invite/:uid PUT');
+    console.log('/api/user/friends/invite/:uid POST');
   });
 });
 
@@ -789,7 +807,7 @@ api.get('/user/friends/invite/requests',  (req,res) => {
   });
 });
 
-api.put('/user/friends/invite/requests/:userid',  (req,res) => {
+api.post('/user/friends/invite/requests/:userid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
 
     let userid = req.params.userid;
@@ -799,6 +817,8 @@ api.put('/user/friends/invite/requests/:userid',  (req,res) => {
         res.sendStatus(404);
       } else {
         redisClient.multi()
+          .srem(`user:${emailHash}:requests`, userid)
+          .srem(`user:${userid}:invites`, emailHash)
           .sadd(`user:${emailHash}:friends`, userid)
           .sadd(`user:${userid}:friends`, emailHash)
           .exec( (err) => {
@@ -806,7 +826,7 @@ api.put('/user/friends/invite/requests/:userid',  (req,res) => {
           });
       }
     });
-    console.log('/api/user/friends/invite/requests/:uid PUT');
+    console.log('/api/user/friends/invite/requests/:uid POST');
   });
 });
 
@@ -824,11 +844,7 @@ api.get('/user/pm/:userid',  (req,res) => {
     let pmId = hash(`${userA}${userB}`);
 
     redisClient.zrevrange(`room:${pmId}:messages`, 0, 49, (err, messages) => {
-      let parsed = messages.map(
-        (message) => { return JSON.parse(message);
-          delete result.ServerTimestamp; //client dont need this
-          return result;
-      });
+      let parsed = messages.map((message) => JSON.parse(message));
       res.status(200).send(parsed);
     });
     console.log('/api/user/pm/:uid GET');
@@ -869,6 +885,9 @@ api.post('/user/pm/:userid',  (req,res) => {
       stringified,
       (err) => {
         res.sendStatus(204);
+        redisClient.publish(`room:${pmId}:messages`, JSON.stringify(nmsg), (err, reply) => {
+          prettyLog(`${reply} client(s) are notified.`);
+        });
       });
   console.log('/api/user/pm/:uid POST');
   });

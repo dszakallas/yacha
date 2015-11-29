@@ -11,6 +11,8 @@ import Html from './components/Html';
 import api from './server/api';
 import socket from './server/socket';
 
+import { prettyLog } from './utils/utils';
+
 const server = global.server = express();
 
 server.set('port', (process.env.PORT || 5000));
@@ -36,7 +38,7 @@ server.get('*', (req,res,next) => {
 
 let httpserver = server.listen(server.get('port'), () => {
   /* eslint-disable no-console */
-  console.log('The server is running at http://localhost:' + server.get('port'));
+  prettyLog('The server is running at http://localhost:' + server.get('port'));
   if (process.send) {
     process.send('online');
   }

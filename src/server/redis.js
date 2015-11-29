@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import url from 'url';
 import { prettyLog } from '../utils/utils';;
 
-export default function createRedisClient() {
+export default function createRedisClient(cb) {
 
   let redisClient;
   if (process.env.REDISCLOUD_URL) {
@@ -14,7 +14,7 @@ export default function createRedisClient() {
   }
 
   redisClient.on('connect', () => {
-      prettyLog('Redis connected');
+      if(cb) cb();
   });
 
   return redisClient;

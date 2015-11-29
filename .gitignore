@@ -6,5 +6,8 @@ node_modules
 ncp-debug.log
 npm-debug.log
 
+start.sh
+dump.rdb
+
 .idea
 .env

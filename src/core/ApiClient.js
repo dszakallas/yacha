@@ -160,17 +160,30 @@ const ApiClient = {
       });
   }),
 
-  messages: (roomId) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(roomId);
-    request
-      .get(apiUrl(`/user/rooms/${encoded}/messages`))
-      .end((err, res) => {
-        if(err)
-          reject(res);
-        else {
-          resolve(res.body);
-        }
-      });
+  messages: (id, Private) => new Promise((resolve, reject) => {
+    let encoded = encodeURIComponent(id);
+    if(Private) {
+      request
+        .get(apiUrl(`/user/pm/${encoded}`))
+        .end((err, res) => {
+          if(err)
+            reject(res);
+          else {
+            resolve(res.body);
+          }
+        });
+
+    } else {
+      request
+        .get(apiUrl(`/user/rooms/${encoded}/messages`))
+        .end((err, res) => {
+          if(err)
+            reject(res);
+          else {
+            resolve(res.body);
+          }
+        });
+    }
   }),
 
   createRoom: (name) => new Promise((resolve, reject) => {
@@ -248,16 +261,30 @@ const ApiClient = {
 
 
 
-  user: () => new Promise((resolve, reject) => {
-    request
-      .get(apiUrl('/user'))
-      .end((err, res) => {
-        if(err)
-          reject(res);
-        else {
-          resolve(res.body);
-        }
-      });
+  user: (userid) => new Promise((resolve, reject) => {
+    if(!userid) {
+      request
+        .get(apiUrl('/user'))
+        .end((err, res) => {
+          if(err)
+            reject(res);
+          else {
+            resolve(res.body);
+          }
+        });
+    } else {
+      let encoded = encodeURIComponent(userid);
+      request
+        .get(apiUrl(`/users/${encoded}`))
+        .end((err, res) => {
+          if(err)
+            reject(res);
+          else {
+            resolve(res.body);
+          }
+        });
+    }
+
   }),
 
   sendForgot: (email) => new Promise((resolve, reject) => {

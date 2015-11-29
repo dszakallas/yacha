@@ -3,7 +3,7 @@ import { parse } from 'cookie';
 
 import { prettyLog, hash } from '../utils/utils';
 
-let redisClient = createRedisClient();
+let redisClient = createRedisClient(() => prettyLog("Redis client connected: sockets"));
 
 exports = module.exports = (io) => {
 
@@ -20,7 +20,7 @@ exports = module.exports = (io) => {
           if(!user)
             next(new Error('Authentication error'));
           else {
-            prettyLog(`socket ${socket.id} authenticated`);
+            prettyLog(`Socket ${socket.id} authenticated`);
             redisClient.hmget(`user:${user}`, ['NickName', 'Email'], (err, userData) => {
               socket.data = {
                 user: { nickname: userData[0], email: userData[1] }
@@ -35,40 +35,64 @@ exports = module.exports = (io) => {
 
   io.on('connection',  (socket) => {
 
-    console.log("Client connected");
+    prettyLog(`Socket ${socket.id} successfully connected`);
 
     let roomSubscriber = createRedisClient();
 
+
+
     // when the client emits 'join', this listens and executes
-    socket.on('join', (roomid) => {
+    socket.on('join', (room) => {
+
+      let { id, Private } = room;
 
       let userid = hash(socket.data.user.email);
 
-      redisClient.sismember(`member:${userid}:rooms`, roomid, (err, isMember) => {
-        if(!isMember) {
-          prettyLog(`${socket.data.user.email} tried to join the bad room ${roomid}`, 'WARN');
-        } else {
-          prettyLog(`${socket.data.user.email} joined the room ${roomid}`);
-          socket.data.room = roomid;
-          socket.join(socket.data.room);
-          io.sockets.in(socket.data.room).emit('userJoined',
-            JSON.stringify({
-              ServerTimestamp: new Date(),
-              Status: 'join',
-              User: socket.data.user
-            }));
+      let joinAndSubscribe = () => {
+        socket.join(socket.data.room);
+        io.sockets.in(socket.data.room).emit('userJoined',
+          JSON.stringify({
+            ServerTimestamp: new Date(),
+            Status: 'join',
+            User: socket.data.user
+          }));
 
-          roomSubscriber.subscribe(`room:${roomid}:messages`, () => {
-            prettyLog(`${socket.data.user.email} subscribed to room:${roomid}:messages`);
-          });
+        roomSubscriber.subscribe(`room:${socket.data.room}:messages`, () => {
+          prettyLog(`${socket.data.user.email} subscribed to room:${socket.data.room}:messages`);
+        });
 
-          roomSubscriber.on('message', (channel, message) => {
-            prettyLog(`Message arrived, pushing to client...`);
-            socket.emit('chatUpdated', message);
-          });
-        }
-      });
+        roomSubscriber.on('message', (channel, message) => {
+          prettyLog(`Message arrived, pushing to client...`);
+          socket.emit('chatUpdated', message);
+        });
+      };
+
+      if(!Private) {
+
+        redisClient.sismember(`member:${userid}:rooms`, id, (err, isMember) => {
+          if(!isMember) {
+            prettyLog(`${socket.data.user.email} tried to join the bad room ${id}`, 'WARN');
+          } else {
+            prettyLog(`${socket.data.user.email} joined the room ${id}`);
+            socket.data.room = id;
+            joinAndSubscribe();
+          }
+        });
+      } else /*Private*/ {
+        let otheruser = id;
+        redisClient.exists(`user:${otheruser}`, (err, exists) => {
+          if(!exists) {
+            prettyLog(`${socket.data.user.email} tried to join a private room with invalid user ${id}`, 'WARN');
+          } else {
+            let [userA, userB] = userid > otheruser ? [userid, otheruser] : [otheruser, userid];
+            let roomid = hash(`${userA}${userB}`);
+            socket.data.room = roomid;
+            joinAndSubscribe();
+          }
+        });
+      }
     });
+
 
     socket.on('leave', () => {
       socket.broadcast.to(socket.data.room).emit('userLeft',

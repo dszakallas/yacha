@@ -4,6 +4,8 @@ import { Modal, Button, Dropdown, Alert } from 'react-bootstrap';
 
 import { Link } from 'react-router';
 
+import { ChatLink } from '../Links';
+
 import ApiClient from '../../core/ApiClient';
 
 import io from 'socket.io-client';
@@ -46,7 +48,6 @@ class Home extends Component {
   }
 
   setChatUpdated(handler) {
-    console.log(handler);
     this.chatUpdatedHandler = handler ? handler : null;
   }
 
@@ -232,7 +233,7 @@ class Home extends Component {
       return(
         <tr key={room.id} >
           { room.admin ? <td><span className="glyphicon glyphicon-star" aria-hidden="true"></span></td> : <td></td> }
-          <td><Link to={`/home/chat/${encodeURIComponent(room.id)}`}>{room.name}</Link></td>
+          <td><ChatLink id={room.id}>{room.name}</ChatLink></td>
           <td><Link to={`/home/room/${encodeURIComponent(room.id)}`}><span className="glyphicon glyphicon-cog" aria-hidden="true"></span></Link></td>
         </tr>
       );

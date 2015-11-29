@@ -60,7 +60,7 @@ class App extends Component {
   }
 
   componentWillUnmount() {
-    ApiClient.onChange = () => {};
+    //ApiClient.onChange = () => {};
   }
 
   componentDidMount() {
@@ -78,26 +78,6 @@ class App extends Component {
       replaceState({ nextPathname: nextState.location.pathname }, '/gate');
     }
 
-
-    // if(!this.state.user) {
-    //   ApiClient.user().then(
-    //     (user) => {
-    //       console.log(`${user.nickname} authenticated`);
-    //       this.setState({user: user});
-    //       cb();
-    //     },
-    //     (err) => {
-    //       if(err.status === 401) {
-    //         console.log("No user authenticated for this agent");
-    //       } else {
-    //         console.warn(`AppRouter: Server returned error ${err}`);
-    //       }
-    //       replaceState({ nextPathname: nextState.location.pathname }, '/gate');
-    //       cb();
-    //   });
-    //
-    //
-    // }
   }
 
   enterChat(nextState, replaceState) {
@@ -141,6 +121,7 @@ class App extends Component {
             <IndexRoute component={Home} onEnter={this.authenticate.bind(this)}/>
             <Route path="home" component={Home} onEnter={this.authenticate.bind(this)}>
               <Route path="chat/:roomid" component={Chat} />
+              <Route path="pm/:userid" component={Chat} />
               <Route path="room/:roomid" component={Room} />
               <Route path="profile(/:userid)" component={Profile} />
             </Route>

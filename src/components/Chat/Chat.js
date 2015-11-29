@@ -4,7 +4,7 @@ import update from 'react-addons-update';
 import ApiClient from '../../core/ApiClient';
 import withStyles from '../../decorators/withStyles';
 import styles from './Chat.less';
-
+import { Link } from 'react-router';
 
 
 @withStyles(styles)
@@ -21,8 +21,22 @@ class Chat extends Component {
 
   }
 
-  setupSocket() {
+  async getRoomData(id, Private) {
+    try {
+      const messages = ApiClient.messages(id, Private);
+      this.setState({ initialMessages: (await messages).reverse() });
 
+      if(!Private) {
+        const room = ApiClient.room(id);
+        this.setState({ room: await room });
+      }
+    } catch (err) {
+      console.error(`Error while fetching initial room data from server: ${err.status}`);
+      console.error(err);
+    }
+  }
+
+  setupSockets(id, Private) {
     this.props.setUserJoined((m) => {
       this.setState({timeline: this.state.timeline.concat([m])});
     });
@@ -30,35 +44,37 @@ class Chat extends Component {
       this.setState({timeline: this.state.timeline.concat([m])});
     });
     this.props.setChatUpdated((m) => {
-      console.log("wat");
       this.setState({ timeline: this.state.timeline.concat([m])});
     });
 
     console.log("Handlers set. Joining room");
 
-    this.props.socket.emit('join', this.props.params.roomid);
-  }
-
-  async getRoomData() {
-    try {
-      let users = [];
-
-      const room = ApiClient.room(this.props.params.roomid);
-      const messages = ApiClient.messages(this.props.params.roomid);
-      this.setState({ room: await room, initialMessages: (await messages).reverse() });
-    } catch (err) {
-      console.error(`Error while fetching initial room data from server: ${err.status}`);
-      console.error(err);
-    }
+    this.props.socket.emit('join', { id: id, Private: Private});
   }
 
   async componentDidMount() {
 
-    console.log('Chatroom mounting');
+    let Private;
+    let id
 
-    this.setupSocket.call(this);
+    if(this.props.params.roomid) {
+      console.log('Mounting chat room');
+      Private = false;
+      id = this.props.params.roomid;
 
-    this.getRoomData.call(this);
+    } else if(this.props.params.userid) {
+      console.log('Mounting pm room');
+      Private = true;
+      id = this.props.params.userid;
+    } else {
+      console.error("Invalid room");
+    }
+
+    this.setState({ Private: Private });
+
+    this.getRoomData.call(this, id, Private);
+
+    this.setupSockets.call(this, id, Private);
 
   }
 
@@ -91,10 +107,6 @@ class Chat extends Component {
         </p>
       );
   }
-
-  /*
-{ user.admin ? <span className="glyphicon glyphicon-star" aria-hidden="true"></span> : null }
-  */
 
 
 
@@ -148,7 +160,10 @@ class Chat extends Component {
             <div className="row">
               <div className="col-sm-10">
                 <button disabled={this.state.message ? false : true} className="btn btn-primary" onClick={this.sendMessage.bind(this)}>Send</button>
-                <button className="btn"><span className="glyphicon glyphicon-cog" aria-hidden="true" /></button>
+                { this.state.Private
+                  ? null
+                  : <button className="btn"><Link to={`/home/room/${encodeURIComponent(this.props.params.roomid)}`}> <span className="glyphicon glyphicon-cog" aria-hidden="true" /></Link></button>
+                }
               </div>
             </div>
           </div>

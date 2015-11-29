@@ -3,6 +3,7 @@ import { Modal, Button, Dropdown, Alert } from 'react-bootstrap';
 import { Link } from 'react-router';
 import ApiClient from '../../core/ApiClient';
 import { hash } from '../../utils/utils';
+import { UserLink } from '../Links';
 
 class Room extends Component {
 
@@ -31,12 +32,10 @@ class Room extends Component {
 
   async componentDidMount() {
     let user = this.props.getUser();
-    console.log(user);
     const room = await ApiClient.room(this.props.params.roomid);
 
     if(room.admins.map(admin => {return admin.email}).indexOf(user.email)!==-1) {
       this.setState({ admin: true });
-      console.log("Admin");
     }
     this.setState({ room: room });
 
@@ -130,7 +129,7 @@ class Room extends Component {
             return(
               <tr key={member.email}>
                 <td>{ adminEmails.indexOf(member.email) === -1 ? null : <span className="glyphicon glyphicon-star" aria-hidden="true"></span> }</td>
-                <td>{member.nickname}</td>
+                <td><UserLink email={member.email}>{member.nickname}</UserLink></td>
                 <td>{member.email}</td>
               </tr>
             );
@@ -179,7 +178,6 @@ class Room extends Component {
 
 
   renderAdmin() {
-    console.log("renderAdmin called");
     return(
       <div>
         <h3> Admin </h3>
