@@ -109,18 +109,18 @@ class App extends Component {
   }
 
   async login(email, password) {
-    const user = await ApiClient.login(email, password);
+    const user = await ApiClient.login.call(ApiClient, email, password);
     console.log(`${user.nickname} logged in`);
     return user;
   }
 
   async verify(forgot, token) {
     console.log(`Verify: sending token`);
-    const resp = await ApiClient.verify(forgot, token);
+    const resp = await ApiClient.verify.call(ApiClient, forgot, token);
   }
 
   async logout() {
-    await ApiClient.logout();
+    await ApiClient.logout.call(ApiClient);
   }
 
   render() {

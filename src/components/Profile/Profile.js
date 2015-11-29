@@ -16,13 +16,14 @@ class Profile extends Component {
   }
 
   componentDidMount() {
-    console.log(this.props.params.userid);
 
     if(!this.props.params.userid) {
+      let user = this.props.getUser();
+
       this.setState ({
-        id: hash(this.props.user.email),
-        email: this.props.user.email,
-        nickname: this.props.user.nickname
+        id: hash(user.email),
+        email: user.email,
+        nickname: user.nickname
       });
     } else {
 

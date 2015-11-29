@@ -12,7 +12,7 @@ const ApiClient = {
   },
 
   getUser: () => {
-    return localStorage.user;
+    return localStorage.user ? JSON.parse(localStorage.user) : null;
   },
 
   loggedIn: () => {
@@ -25,7 +25,7 @@ const ApiClient = {
 
     if (localStorage.user) {
       resolve(JSON.parse(localStorage.user));
-      this.onChange(null, JSON.parse(localStorage.user));
+      ApiClient.onChange(null, JSON.parse(localStorage.user));
       return;
     }
     request
@@ -35,12 +35,12 @@ const ApiClient = {
       .end((err, res) => {
         if (err) {
           reject(err);
-          this.onChange(err, null);
+          ApiClient.onChange(err, null);
         } else {
           localStorage.token = res.header['X-Yacha-AuthToken'];
           localStorage.user = JSON.stringify(res.body);
           resolve(res.body);
-          this.onChange(null, res.body);
+          ApiClient.onChange(null, JSON.parse(localStorage.user));
         }
       });
   }),
@@ -55,7 +55,7 @@ const ApiClient = {
           console.error(err);
       });
     resolve();
-    this.onChange();
+    ApiClient.onChange();
   }),
 
   verify: (forgot, token) => new Promise((resolve, reject) => {

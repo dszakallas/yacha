@@ -30,18 +30,14 @@ class Room extends Component {
   }
 
   async componentDidMount() {
-    let user = this.props.user.email;
+    let user = this.props.getUser();
     console.log(user);
     const room = await ApiClient.room(this.props.params.roomid);
 
-    if(room.admins.map(admin => {return admin.email}).indexOf(user)!==-1) {
+    if(room.admins.map(admin => {return admin.email}).indexOf(user.email)!==-1) {
       this.setState({ admin: true });
       console.log("Admin");
-    } else {
-
     }
-
-
     this.setState({ room: room });
 
   }
