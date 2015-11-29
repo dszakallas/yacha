@@ -116,7 +116,7 @@ class App extends Component {
     return (
 
       <div className="container">
-        <Router createElement={createElement.bind(this)} history={this.props.history}>
+        <Router createElement={createElement.bind(this)}>
           <Route path="/" component={Layout} >
             <IndexRoute component={Home} onEnter={this.authenticate.bind(this)}/>
             <Route path="home" component={Home} onEnter={this.authenticate.bind(this)}>
