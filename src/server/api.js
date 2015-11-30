@@ -359,7 +359,7 @@ api.post('/user/join',  (req,res) => {
               if(err)
                 sendInternalError(res);
               else if(isMember)
-                res.status(400).send({"reason" : 11});
+                res.status(400).send({"reasonCode" : 11});
               else {
                 redisClient.multi()
                   .sadd(`member:${emailHash}:rooms`, roomid)
