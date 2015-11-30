@@ -74,6 +74,7 @@ class Room extends Component {
     try {
       await ApiClient.deleteRoom(this.state.room.id);
       this.props.history.replaceState(null, '/home');
+      this.props.removeRoomFromList(this.state.room.id);
     } catch(err) {
       console.error(err);
     }
@@ -83,6 +84,7 @@ class Room extends Component {
     try {
       await ApiClient.leave(this.state.room.id);
       this.props.history.replaceState(null, '/home');
+      this.props.removeRoomFromList(this.state.room.id);
     } catch(err) {
       if(err.status == 400 && err.body.reasonCode == 10) {
         this.setState({ cannotLeave: true });
