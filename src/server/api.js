@@ -201,8 +201,13 @@ api.put('/user',  (req,res) => {
       res.sendStatus(400);
     } else {
       const pwHash = hash(password);
-      redisClient.hset(`users:${emailHash}`, 'Password', password, (err) => {
-        res.status(200).send({ password: password });
+      redisClient.hset(`user:${emailHash}`, 'Password', pwHash, (err) => {
+        let authToken = crypto.randomBytes(64).toString('hex');
+        res.clearCookie('AuthToken');
+        res.cookie('AuthToken', authToken);
+        res.set('X-Yacha-AuthToken', authToken);
+        redisClient.hset(`authTokens`, authToken, emailHash);
+        res.status(200).send({ password: pwHash });
       });
     }
     console.log('/api/user PUT');
