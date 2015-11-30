@@ -51,12 +51,15 @@ class Profile extends Component {
   async changePassword() {
 
     if(!this.state.passwordInput || this.state.passwordInput.length < 5) {
+      console.log("Called");
       this.setState({ passwordError: 'Password too short' });
     } else {
       try {
+        console.log("Called 2");
         await ApiClient.changePassword(this.state.passwordInput);
-        this.setState({ passwordError: '', passwordSuccess: 'Successfully changed password' });
+        this.setState({ passwordError: '', passwordSuccess: 'Successfully changed password', passwordInput: '' });
       } catch(err) {
+        console.log("err");
         this.setState({ passwordError: 'Something went wrong' });
       }
     }
@@ -91,8 +94,8 @@ class Profile extends Component {
                     placeholder="Enter new password"
                     onChange={(e) => this.setState({ passwordInput: e.target.value })}
                     value={this.state.passwordInput} />
-                    { this.state.adminFormRoomNameSuccess ? <Alert bsStyle="success">{this.state.passwordSuccess}</Alert> : null }
-                    { this.state.adminFormRoomNameError ? <Alert bsStyle="danger">{this.state.passwordError}</Alert> : null }
+                    { this.state.passwordSuccess ? <Alert bsStyle="success">{this.state.passwordSuccess}</Alert> : null }
+                    { this.state.passwordError ? <Alert bsStyle="danger">{this.state.passwordError}</Alert> : null }
                   </div>
                   <button type="button" className="btn btn-default" onClick={this.changePassword.bind(this)}>Change</button>
                 </form>

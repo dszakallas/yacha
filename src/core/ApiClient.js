@@ -144,6 +144,19 @@ const ApiClient = {
       });
   }),
 
+  changePassword: (password) => new Promise((resolve, reject) => {
+    request
+      .put(apiUrl('/user'))
+      .send({password : password})
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
   rooms: () => new Promise((resolve, reject) => {
     request
       .get(apiUrl('/user/rooms'))
