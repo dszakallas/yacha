@@ -171,6 +171,21 @@ const ApiClient = {
       });
   }),
 
+  renameRoom: (id, newName) => new Promise((resolve, reject) => {
+    let encoded = encodeURIComponent(id);
+    request
+      .put(apiUrl(`/user/rooms/${encoded}`))
+      .send({name : name})
+      /*.accept('application/json')*/
+      .end((err, res) => {
+        if (err) {
+          reject(res);
+        } else {
+          resolve(res.body);
+        }
+      });
+  }),
+
   leave: (roomid) => new Promise((resolve, reject) => {
     let encoded = encodeURIComponent(roomid);
     request

@@ -18,7 +18,8 @@ class Room extends Component {
       },
 
       adminFormRoomNameInput: '',
-      adminFormRoomError: '',
+      adminFormRoomNameSuccess: '',
+      adminFormRoomNameError: '',
       adminInviteUserInput: '',
       adminInviteUserError: '',
       adminInviteUserSuccess: '',
@@ -113,7 +114,16 @@ class Room extends Component {
     if(!this.state.adminFormRoomNameInput) {
       this.setState({ adminFormRoomNameError: 'Name cannot be empty' });
     } else {
-      //TODO
+      this.props.renameRoom(this.props.params.roomid, this.state.adminFormRoomNameInput, (err) => {
+        if(err) {
+          this.setState({ adminFormRoomNameError: 'Something went wrong' });
+        } else {
+          this.setState({ adminFormRoomNameError: '', adminFormRoomNameSuccess: 'Successfully renamed room' });
+          let room = this.state.room;
+          room.name = this.state.adminFormRoomNameInput;
+          this.setState({room: room});
+        }
+      });
     }
   }
 
@@ -195,6 +205,8 @@ class Room extends Component {
                   value={this.state.adminFormRoomNameInput}
                   ></input>
               </div>
+              { this.state.adminFormRoomNameSuccess ? <Alert bsStyle="success">{this.state.adminFormRoomNameSuccess}</Alert> : null }
+              { this.state.adminFormRoomNameError ? <Alert bsStyle="danger">{this.state.adminFormRoomNameError}</Alert> : null }
               <button type="button" onClick={this.rename.bind(this)} className="btn btn-default">Rename</button>
             </form>
           </div>

@@ -535,9 +535,9 @@ api.post('/user/admin/rooms',  (req,res) => {
 api.put('/user/admin/rooms/:roomid',  (req,res) => {
   checkAuthentication(req,res, (req,res, emailHash) => {
     var roomid = req.params.roomid;
-    var newName = body.name;
+    var newName = req.body.name;
 
-    if(!body.name) {
+    if(!newName) {
       res.sendStatus(400);
       return;
     }

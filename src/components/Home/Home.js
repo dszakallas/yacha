@@ -232,6 +232,21 @@ class Home extends Component {
     }
   }
 
+  async renameRoom(id, newName, cb) {
+    let room = this.state.rooms.filter((room) => room.id == id)[0];
+    console.log(room);
+    try {
+      await ApiClient.renameRoom(this.props.params.roomid, newName);
+      let rooms = this.state.rooms.map((room) => room.id == id ? Object.assign(room, {name: newName}) : room );
+      console.log(`Seems ok`);
+      console.log(rooms);
+      this.setState({ rooms: rooms });
+      cb();
+    } catch (err) {
+      cb(err);
+    }
+  }
+
   async createRoom() {
     try {
       console.log("Create room called");
@@ -299,7 +314,8 @@ class Home extends Component {
           setUserJoined: this.setUserJoined.bind(this),
           setUserLeft: this.setUserLeft.bind(this),
           setChatUpdated: this.setChatUpdated.bind(this),
-          socket: this.socket
+          socket: this.socket,
+          renameRoom: this.renameRoom.bind(this)
         })
       : this.renderHome.call(this);
   }

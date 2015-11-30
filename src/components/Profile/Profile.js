@@ -5,12 +5,17 @@ import { Link } from 'react-router';
 import { ChatLink } from '../Links';
 import { hash } from '../../utils/utils';
 import ApiClient from '../../core/ApiClient';
+import { Alert } from 'react-bootstrap';
 
 class Profile extends Component {
 
   constructor() {
     super();
     this.state = {
+
+      passwordError: '',
+      passwordSuccess: '',
+      passwordInput: ''
 
     };
   }
@@ -43,6 +48,20 @@ class Profile extends Component {
 
   }
 
+  async changePassword() {
+
+    if(!this.state.passwordInput || this.state.passwordInput.length < 5) {
+      this.setState({ passwordError: 'Password too short' });
+    } else {
+      try {
+        await ApiClient.changePassword(this.state.passwordInput);
+        this.setState({ passwordError: '', passwordSuccess: 'Successfully changed password' });
+      } catch(err) {
+        this.setState({ passwordError: 'Something went wrong' });
+      }
+    }
+  }
+
   render() {
     return(
       <div>
@@ -63,7 +82,20 @@ class Profile extends Component {
             </div>
             { this.state.me
               ?
-                null
+                <form className="form-inline">
+                  <div className="form-group">
+                    <label htmlFor="password">Password</label>
+                    <input type="password"
+                    className="form-control"
+                    id="password"
+                    placeholder="Enter new password"
+                    onChange={(e) => this.setState({ passwordInput: e.target.value })}
+                    value={this.state.passwordInput} />
+                    { this.state.adminFormRoomNameSuccess ? <Alert bsStyle="success">{this.state.passwordSuccess}</Alert> : null }
+                    { this.state.adminFormRoomNameError ? <Alert bsStyle="danger">{this.state.passwordError}</Alert> : null }
+                  </div>
+                  <button type="button" className="btn btn-default" onClick={this.changePassword.bind(this)}>Change</button>
+                </form>
               :
                 <div className="row">
                   <div className="col-xs-6">
