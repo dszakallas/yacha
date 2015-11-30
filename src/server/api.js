@@ -139,13 +139,13 @@ api.post('/register',  (req,res) => {
   redisClient.exists(`user:${emailHash}`, (err, exists) => {
     if(exists) {
       console.log('api/register the user exists');
-      let reasonCode = {"reason" : 0};
+      let reasonCode = {"reasonCode" : 0};
       res.status(400).send(reasonCode);
     } else {
       redisClient.hexists('nicknames', nickname, (err, nicknameTaken) => {
         if(nicknameTaken) {
           console.log('api/register nickname taken');
-          let reasonCode = {"reason" : 1 };
+          let reasonCode = {"reasonCode" : 1 };
           res.status(400).send(reasonCode);
         } else {
           let pwhash = hash(pw1);
@@ -317,7 +317,7 @@ api.delete('/user/rooms/:roomid',  (req,res) => {
           else {
             if(admins.indexOf(emailHash) !== -1 && admins.length === 1) {
               //sole owner
-              res.status(400).send({"reason" : 10});
+              res.status(400).send({"reasonCode" : 10});
             } else {
               //safe to delete
               redisClient.multi()
@@ -346,7 +346,7 @@ api.post('/user/join',  (req,res) => {
 
     redisClient.hget(`inviteTokens`, token, (err, roomid) => {
       if(!roomid) {
-        res.sendStatus(400).send({"reason" : 12});
+        res.sendStatus(400).send({"reasonCode" : 12});
       } else {
         redisClient.hgetall(`room:${roomid}`, (err, roomData) => {
           if(err) {
@@ -570,11 +570,11 @@ api.post('/user/admin/rooms/:roomid/invite/:userid',  (req,res) => {
     } else {
       redisClient.exists(`user:${userid}`, (err, exists) => {
         if(!exists) {
-          res.status(400).send({"reason" : 0});
+          res.status(400).send({"reasonCode" : 0});
         } else {
           redisClient.sismember(`room:${roomid}:members`, userid, (err, isMember) => {
             if(isMember){
-              res.status(400).send({"reason" : 1});
+              res.status(400).send({"reasonCode" : 1});
             } else {
               redisClient.hgetall(`room:${roomid}`, (err, roomData) => {
                 redisClient.hgetall(`user:${userid}`, (err, userData) => {

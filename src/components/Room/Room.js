@@ -83,7 +83,7 @@ class Room extends Component {
       await ApiClient.leave(this.state.room.id);
       this.props.history.replaceState(null, '/home');
     } catch(err) {
-      if(err.status == 400 && err.body.reason == 10) {
+      if(err.status == 400 && err.body.reasonCode == 10) {
         this.setState({ cannotLeave: true });
       } else {
         console.error(err);
