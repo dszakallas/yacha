@@ -48,7 +48,7 @@ class Room extends Component {
       this.setState({ adminInviteUserError: 'Enter an email address'});
     } else {
       try {
-        await ApiClient.invite(this.state.room.id ,hash(this.state.adminInviteUserInput));
+        await ApiClient.roomInvite(this.state.room.id ,hash(this.state.adminInviteUserInput));
         this.setState({ adminInviteUserSuccess: `An email has been sent to ${this.state.adminInviteUserInput}` });
         this.setState({ adminInviteUserError: '' });
       } catch(err) {

@@ -185,7 +185,7 @@ const ApiClient = {
       });
   }),
 
-  invite: (roomid, emailHash) => new Promise((resolve, reject) => {
+  roomInvite: (roomid, emailHash) => new Promise((resolve, reject) => {
     let encodedRoomid = encodeURIComponent(roomid);
     let encodedEmail = encodeURIComponent(emailHash);
     request

@@ -67,8 +67,7 @@ class Profile extends Component {
               :
                 <div className="row">
                   <div className="col-xs-6">
-                    <button className="btn btn-lg btn-primary"> Friend request </button>
-                    <button className="btn btn-lg btn-primary"><ChatLink Private={true} id={this.state.id}> Private message </ChatLink></button>
+                    <ChatLink Private={true} id={this.state.id}> <button className="btn btn-lg btn-primary">Private message </button></ChatLink>
                   </div>
                 </div>
             }
