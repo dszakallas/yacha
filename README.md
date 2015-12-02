@@ -3,4 +3,6 @@
 
 Yet Another CHat App
 
+Frontpage: http://gd-softarch-2015.github.io/yacha/
+
 Demo: http://yacha.herokuapp.com/
