@@ -129,8 +129,19 @@ class Home extends Component {
 
     this.loadStateFromServer.call(this);
 
-    let socket = this.socket = io.connect();
-    this.setupSocket.call(this, socket);
+    let socket = this.props.getSocket();
+
+    if(socket == null) {
+      console.log("Socket is null, creating");
+      socket = this.socket = io.connect();
+      this.setupSocket.call(this, socket);
+      this.props.setSocket(socket);
+    } else {
+      console.log("Reconnecting");
+      this.socket = socket;
+      socket.io.reconnect();
+      this.setupSocket.call(this, socket);
+    }
 
   }
 

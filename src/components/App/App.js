@@ -21,17 +21,29 @@ import Header from '../Header';
 import Footer from '../Footer';
 
 
+let socket = null;
+
 const Layout = React.createClass({
 
   componentDidMount() {
     console.log("Header mounted");
   },
 
+  getSocket() {
+    return socket;
+  },
+
+  setSocket(_socket) {
+    console.log("Setting socket");
+    socket = _socket;
+  },
+
   render: function(){
     return (
       <div>
         <Header {...this.props} />
-        {this.props.children}
+        {this.props.children && React.cloneElement(
+          this.props.children, { setSocket: this.setSocket, getSocket: this.getSocket }) }
         <Footer />
       </div>
     );
