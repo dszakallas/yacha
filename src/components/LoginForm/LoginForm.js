@@ -1,39 +1,36 @@
-import React, { PropTypes, Component } from 'react';
-import { Alert } from 'react-bootstrap';
-
-import { Link } from 'react-router';
-
-import ApiClient from '../../core/ApiClient';
+import React, { PropTypes, Component } from 'react'
+import { Alert } from 'react-bootstrap'
+import { Link } from 'react-router'
+import ApiClient from '../../core/ApiClient'
 
 class LoginForm extends Component {
 
-  constructor() {
-    super();
+  constructor () {
+    super()
 
     this.state = {
-      error: "",
-
-      email: "",
-      password: "",
+      error: '',
+      email: '',
+      password: '',
       remember: true
-    };
+    }
   }
 
-  async submit(e) {
-    e.preventDefault();
-    if(!this.state.email || !this.state.password) {
-      this.setState({ error: "Fill in both fields" });
+  async submit (e) {
+    e.preventDefault()
+    if (!this.state.email || !this.state.password) {
+      this.setState({ error: 'Fill in both fields' })
     } else {
-      this.setState({ error: '' });
-      console.log("submitting form");
+      this.setState({ error: '' })
+      console.log('submitting form')
 
-      let email = this.state.email;
+      let email = this.state.email
       let password = this.state.password
 
       try {
-        await this.props.login(email, password);
+        await this.props.login(email, password)
 
-        this.props.history.replaceState(null, '/home');
+        this.props.history.replaceState(null, '/home')
 
         //const { location } = this.props
 
@@ -43,11 +40,11 @@ class LoginForm extends Component {
         //   this.history.replaceState(null, '/')
         // }
       } catch(err) {
-        if(err.status === 401) {
-          this.setState({ error: 'Invalid email or password' });
+        if (err.status === 401) {
+          this.setState({ error: 'Invalid email or password' })
         } else {
-          this.setState({ error: 'Something went wrong', email:'', password:'' });
-          console.error(`LoginForm: server returned ${err}`);
+          this.setState({ error: 'Something went wrong', email:'', password:'' })
+          console.error(`LoginForm: server returned ${err}`)
         }
       }
     }
@@ -90,8 +87,8 @@ class LoginForm extends Component {
         </div>
         <button type="submit" className="btn btn-default">Sign in</button>
       </form>
-    );
+    )
   }
 }
 
-export default LoginForm;
+export default LoginForm

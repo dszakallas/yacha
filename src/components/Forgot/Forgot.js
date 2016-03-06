@@ -1,12 +1,11 @@
-import React, { PropTypes, Component } from 'react';
-import { Alert } from 'react-bootstrap';
-import { Link } from 'react-router';
-import ApiClient from '../../core/ApiClient';
+import React, { Component } from 'react'
+import { Alert } from 'react-bootstrap'
+import ApiClient from '../../core/ApiClient'
 
 class Forgot extends Component {
 
-  constructor() {
-    super();
+  constructor () {
+    super()
 
     this.state = {
       value: '',
@@ -17,33 +16,33 @@ class Forgot extends Component {
     }
   }
 
-  changed(e) {
-    this.setState({ value: e.target.value, touched: true });
+  changed (e) {
+    this.setState({ value: e.target.value, touched: true })
 
-    if(!e.target.value || e.target.value.lastIndexOf('@') === -1 )
-      this.setState({ error: true });
-    else
-      this.setState({ error: false });
+    if (!e.target.value || e.target.value.lastIndexOf('@') === -1) {
+      this.setState({ error: true })
+    } else {
+      this.setState({ error: false })
+    }
   }
 
-  blurred() {
-    this.setState({ touched: true });
+  blurred () {
+    this.setState({ touched: true })
   }
 
-  async submit(e) {
-    e.preventDefault();
+  async submit (e) {
+    e.preventDefault()
 
     try {
-      await ApiClient.sendForgot(this.state.value);
-    } catch(err) {
-      console.warn("Forgot: Server possibly couldnt send the mail");
+      await ApiClient.sendForgot(this.state.value)
+    } catch (err) {
+      console.warn('Forgot: Server possibly couldnt send the mail')
     }
 
-    this.setState({ submitted: true });
-
+    this.setState({ submitted: true })
   }
 
-  render() {
+  render () {
     return (
       <div>
         <div className="row">
@@ -54,15 +53,13 @@ class Forgot extends Component {
         <div className="row">
           {
             this.state.submitted
-              ?
-                <Alert bsStyle="info" >
+              ? <Alert bsStyle="info" >
                   <h4>Email sent</h4>
                   <p>If the address corresponds to an existing account, you should receive an email shortly.</p>
                 </Alert>
-              :
-                <form className="form-horizontal" onSubmit={this.submit.bind(this)}>
+              : <form className="form-horizontal" onSubmit={this.submit.bind(this)}>
                   <p>Enter your email address.</p>
-                  <div className={ this.state.error && this.state.touched ? "has-error" : null }>
+                  <div className={ this.state.error && this.state.touched ? 'has-error' : null }>
                     <div className="form-group">
                       <label htmlFor="forgot-email" className="sr-only">Email address</label>
                       <input type="text"
@@ -79,8 +76,8 @@ class Forgot extends Component {
           }
         </div>
       </div>
-    );
+    )
   }
 }
 
-export default Forgot;
+export default Forgot

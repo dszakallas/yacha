@@ -1,36 +1,34 @@
-/*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
+import 'babel-polyfill'
+import path from 'path'
+import express from 'express'
+import React from 'react'
+import ReactDOM from 'react-dom/server'
+import io from 'socket.io'
+import Html from './components/Html'
 
-import 'babel-core/polyfill';
-import path from 'path';
-import express from 'express';
-import React from 'react';
-import ReactDOM from 'react-dom/server';
-import io from 'socket.io';
-import Html from './components/Html';
+import api from './server/api'
+import socket from './server/socket'
 
-import api from './server/api';
-import socket from './server/socket';
+import { prettyLog } from './utils/utils'
 
-import { prettyLog } from './utils/utils';
+const server = global.server = express()
 
-const server = global.server = express();
-
-server.set('port', (process.env.PORT || 5000));
+server.set('port', (process.env.PORT || 5000))
 
 //
 // Attach prerendered static files
 //
-server.use(express.static(path.join(__dirname, 'public')));
+server.use(express.static(path.join(__dirname, 'public')))
 
 //
 // Register API middleware
 // -----------------------------------------------------------------------------
-server.use('/api', api);
+server.use('/api', api)
 
-server.get('*', (req,res,next) => {
-  const html = ReactDOM.renderToStaticMarkup(<Html />);
-  res.send(html);
-});
+server.get('*', (req, res, next) => {
+  const html = ReactDOM.renderToStaticMarkup(<Html />)
+  res.send(html)
+})
 
 //
 // Launch the server
@@ -38,10 +36,10 @@ server.get('*', (req,res,next) => {
 
 let httpserver = server.listen(server.get('port'), () => {
   /* eslint-disable no-console */
-  prettyLog('The server is running at http://localhost:' + server.get('port'));
+  prettyLog('The server is running at http://localhost:' + server.get('port'))
   if (process.send) {
-    process.send('online');
+    process.send('online')
   }
-});
+})
 
-socket(io(httpserver));
+socket(io(httpserver))

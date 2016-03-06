@@ -1,44 +1,37 @@
-import React, { PropTypes, Component } from 'react';
-import { Router, Route, Link, IndexRoute } from 'react-router';
-import withStyles from '../../decorators/withStyles';
-import styles from './App.less';
+import React, { Component } from 'react'
+import { Router, Route, IndexRoute } from 'react-router'
+import withStyles from '../../decorators/withStyles'
+import styles from './App.less'
 
 import createBrowserHistory from 'history/lib/createBrowserHistory'
 
-import GatePage from '../GatePage';
-import Marketing from '../Marketing';
-import SignUp from '../SignUp';
-import Verify from '../Verify';
-import Forgot from '../Forgot';
-import Home from '../Home';
-import Chat from '../Chat';
-import Room from '../Room';
-import Profile from '../Profile';
+import GatePage from '../GatePage'
+import Marketing from '../Marketing'
+import SignUp from '../SignUp'
+import Verify from '../Verify'
+import Forgot from '../Forgot'
+import Home from '../Home'
+import Chat from '../Chat'
+import Room from '../Room'
+import Profile from '../Profile'
 
-import ApiClient from '../../core/ApiClient';
+import ApiClient from '../../core/ApiClient'
 
-import Header from '../Header';
-import Footer from '../Footer';
+import Header from '../Header'
+import Footer from '../Footer'
 
-
-let socket = null;
+let socket = null
 
 const Layout = React.createClass({
-
-  componentDidMount() {
-    console.log("Header mounted");
+  getSocket () {
+    return socket
   },
 
-  getSocket() {
-    return socket;
+  setSocket (_socket) {
+    socket = _socket
   },
 
-  setSocket(_socket) {
-    console.log("Setting socket");
-    socket = _socket;
-  },
-
-  render: function(){
+  render () {
     return (
       <div>
         <Header {...this.props} />
@@ -46,77 +39,68 @@ const Layout = React.createClass({
           this.props.children, { setSocket: this.setSocket, getSocket: this.getSocket }) }
         <Footer />
       </div>
-    );
+    )
   }
-});
+})
 
 @withStyles(styles)
 class App extends Component {
 
-  constructor() {
-    super();
+  constructor () {
+    super()
 
     this.state = {
       user: ApiClient.getUser()
-    };
-
+    }
   }
 
   static defaultProps = {
     history: createBrowserHistory()
   }
 
-  componentWillMount() {
-    //ApiClient.onChange = this.updateAuth.bind(this);
-    ApiClient.login();
+  componentWillMount () {
+    // ApiClient.onChange = this.updateAuth.bind(this);
+    ApiClient.login()
   }
 
-  componentWillUnmount() {
-    //ApiClient.onChange = () => {};
+  componentWillUnmount () {
+    // ApiClient.onChange = () => {};
   }
 
-  componentDidMount() {
-  }
-
-  updateAuth(err, user) {
+  updateAuth (err, user) {
+    if (err) { throw err }
     this.setState({
       user: user
-    });
+    })
   }
 
-  authenticate(nextState, replaceState) {
-
-    if(!ApiClient.loggedIn()) {
-      replaceState({ nextPathname: nextState.location.pathname }, '/gate');
+  authenticate (nextState, replaceState) {
+    if (!ApiClient.loggedIn()) {
+      replaceState({ nextPathname: nextState.location.pathname }, '/gate')
     }
-
   }
 
-  enterChat(nextState, replaceState) {
-    console.log("Entering chat");
+  getUser () {
+    return ApiClient.getUser()
   }
 
-  getUser() {
-    return ApiClient.getUser();
+  async login (email, password) {
+    const user = await ApiClient.login(email, password)
+    console.log(`${user.nickname} logged in`)
+    return user
   }
 
-  async login(email, password) {
-    const user = await ApiClient.login.call(ApiClient, email, password);
-    console.log(`${user.nickname} logged in`);
-    return user;
+  async verify (forgot, token) {
+    console.log(`Verify: sending token`)
+    await ApiClient.verify(forgot, token)
   }
 
-  async verify(forgot, token) {
-    console.log(`Verify: sending token`);
-    const resp = await ApiClient.verify.call(ApiClient, forgot, token);
+  async logout () {
+    await ApiClient.logout()
   }
 
-  async logout() {
-    await ApiClient.logout.call(ApiClient);
-  }
-
-  render() {
-    function createElement(Component, props) {
+  render () {
+    function createElement (Component, props) {
       // make sure you pass all the props in!
       return <Component {...props}
         getUser={this.getUser.bind(this)}
@@ -146,8 +130,8 @@ class App extends Component {
           </Route>
         </Router>
       </div>
-    );
-  };
+    )
+  }
 }
 
-export default App;
+export default App

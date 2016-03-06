@@ -1,19 +1,10 @@
-/**
- * React Starter Kit (http://www.reactstarterkit.com/)
- *
- * Copyright © 2014-2015 Kriasoft, LLC. All rights reserved.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.txt file in the root directory of this source tree.
- */
+import path from 'path'
+import webpack from 'webpack'
+import extend from 'extend'
+import AssetsPlugin from 'assets-webpack-plugin'
 
-import path from 'path';
-import webpack from 'webpack';
-import merge from 'lodash.merge';
-
-const DEBUG = !process.argv.includes('release');
-const VERBOSE = process.argv.includes('verbose');
-const WATCH = process.env.WATCH === undefined ? false : process.env.WATCH;
+const DEBUG = !process.argv.includes('--release')
+const VERBOSE = process.argv.includes('--verbose')
 const AUTOPREFIXER_BROWSERS = [
   'Android 2.3',
   'Android >= 4',
@@ -22,30 +13,22 @@ const AUTOPREFIXER_BROWSERS = [
   'Explorer >= 9',
   'iOS >= 7',
   'Opera >= 12',
-  'Safari >= 7.1',
-];
+  'Safari >= 7.1'
+]
 const GLOBALS = {
   'process.env.NODE_ENV': DEBUG ? '"development"' : '"production"',
-  __DEV__: DEBUG,
-};
-const JS_LOADER = {
-  test: /\.jsx?$/,
-  include: [
-    path.resolve(__dirname, '../node_modules/react-routing/src'),
-    path.resolve(__dirname, '../src'),
-  ],
-  loader: 'babel-loader',
-};
+  __DEV__: DEBUG
+}
 
 //
 // Common configuration chunk to be used for both
-// client-side (app.js) and server-side (server.js) bundles
+// client-side (client.js) and server-side (server.js) bundles
 // -----------------------------------------------------------------------------
 
 const config = {
   output: {
     publicPath: '/',
-    sourcePrefix: '  ',
+    sourcePrefix: '  '
   },
 
   cache: DEBUG,
@@ -60,58 +43,69 @@ const config = {
     chunks: VERBOSE,
     chunkModules: VERBOSE,
     cached: VERBOSE,
-    cachedAssets: VERBOSE,
+    cachedAssets: VERBOSE
   },
 
   plugins: [
-    new webpack.optimize.OccurenceOrderPlugin(),
+    new webpack.optimize.OccurenceOrderPlugin()
   ],
 
   resolve: {
-    extensions: ['', '.webpack.js', '.web.js', '.js', '.jsx'],
+    extensions: ['', '.webpack.js', '.web.js', '.js', '.jsx', '.json']
   },
 
   module: {
     loaders: [
       {
+        test: /\.jsx?$/,
+        include: [
+          path.resolve(__dirname, '../node_modules/react-routing/src'),
+          path.resolve(__dirname, '../src')
+        ],
+        loader: 'babel-loader'
+      }, {
+        test: /\.less$/,
+        loaders: [
+          'style-loader',
+          `css-loader?${DEBUG ? 'sourceMap&' : 'minimize&'}modules&localIdentName=` +
+          `${DEBUG ? '[name]_[local]_[hash:base64:3]' : '[hash:base64:4]'}`,
+          'postcss-loader',
+          'less-loader'
+        ]
+      }, {
         test: /\.json$/,
-        loader: 'json-loader',
+        loader: 'json-loader'
       }, {
         test: /\.txt$/,
-        loader: 'raw-loader',
+        loader: 'raw-loader'
       }, {
         test: /\.(png|jpg|jpeg|gif|svg|woff|woff2)$/,
-        loader: 'url-loader?limit=10000',
+        loader: 'url-loader?limit=10000'
       }, {
         test: /\.(eot|ttf|wav|mp3)$/,
-        loader: 'file-loader',
-      },
-    ],
+        loader: 'file-loader'
+      }
+    ]
   },
 
-  postcss: function plugins() {
+  postcss: function plugins (bundler) {
     return [
-      require('postcss-import')({
-        onImport: files => files.forEach(this.addDependency),
-      }),
-      require('postcss-nested')(),
-      require('postcss-cssnext')({ autoprefixer: AUTOPREFIXER_BROWSERS }),
-    ];
-  },
-};
+      require('postcss-import')({ addDependencyTo: bundler }),
+      require('precss')(),
+      require('autoprefixer')({ browsers: AUTOPREFIXER_BROWSERS })
+    ]
+  }
+}
 
 //
-// Configuration for the client-side bundle (app.js)
+// Configuration for the client-side bundle (client.js)
 // -----------------------------------------------------------------------------
 
-const appConfig = merge({}, config, {
-  entry: [
-    ...(WATCH ? ['webpack-hot-middleware/client'] : []),
-    './src/app.js',
-  ],
+const clientConfig = extend(true, {}, config, {
+  entry: './src/app.js',
   output: {
     path: path.join(__dirname, '../build/public'),
-    filename: 'app.js',
+    filename: DEBUG ? '[name].js?[hash]' : '[name].[hash].js'
   },
 
   // Choose a developer tool to enhance debugging
@@ -119,78 +113,49 @@ const appConfig = merge({}, config, {
   devtool: DEBUG ? 'cheap-module-eval-source-map' : false,
   plugins: [
     ...config.plugins,
-    new webpack.DefinePlugin(GLOBALS),
+    new webpack.DefinePlugin({ ...GLOBALS, 'process.env.BROWSER': true }),
+    new AssetsPlugin({
+      path: path.join(__dirname, '../build'),
+      filename: 'assets.js',
+      processOutput: x => `module.exports = ${JSON.stringify(x)};`
+    }),
     ...(!DEBUG ? [
       new webpack.optimize.DedupePlugin(),
       new webpack.optimize.UglifyJsPlugin({
         compress: {
-          warnings: VERBOSE,
-        },
+          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+          screw_ie8: true,
+
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+          warnings: VERBOSE
+        }
       }),
-      new webpack.optimize.AggressiveMergingPlugin(),
-    ] : []),
-    ...(WATCH ? [
-      new webpack.HotModuleReplacementPlugin(),
-      new webpack.NoErrorsPlugin(),
-    ] : []),
-  ],
-  module: {
-    loaders: [
-      WATCH ? {
-        ...JS_LOADER,
-        query: {
-          // Wraps all React components into arbitrary transforms
-          // https://github.com/gaearon/babel-plugin-react-transform
-          plugins: ['react-transform'],
-          extra: {
-            'react-transform': {
-              transforms: [
-                {
-                  transform: 'react-transform-hmr',
-                  imports: ['react'],
-                  locals: ['module'],
-                }, {
-                  transform: 'react-transform-catch-errors',
-                  imports: ['react', 'redbox-react'],
-                },
-              ],
-            },
-          },
-        },
-      } : JS_LOADER,
-      ...config.module.loaders,
-      {
-        test: /\.css$/,
-        loader: 'style-loader/useable!css-loader!postcss-loader',
-      },
-      {
-        test: /\.less$/,
-        loader: 'style-loader/useable!css-loader!postcss-loader!less-loader'
-      }
-    ],
-  },
-});
+      new webpack.optimize.AggressiveMergingPlugin()
+    ] : [])
+  ]
+})
 
 //
 // Configuration for the server-side bundle (server.js)
 // -----------------------------------------------------------------------------
 
-const serverConfig = merge({}, config, {
+const serverConfig = extend(true, {}, config, {
   entry: './src/server.js',
   output: {
     path: './build',
     filename: 'server.js',
-    libraryTarget: 'commonjs2',
+    libraryTarget: 'commonjs2'
   },
   target: 'node',
   externals: [
-    function filter(context, request, cb) {
+    /^\.\/assets$/,
+    function filter (context, request, cb) {
       const isExternal =
-        request.match(/^[a-z][a-z\/\.\-0-9]*$/i) &&
+        request.match(/^[@a-z][a-z\/\.\-0-9]*$/i) &&
         !request.match(/^react-routing/) &&
-        !context.match(/[\\/]react-routing/);
-      cb(null, Boolean(isExternal));
-    },
+        !context.match(/[\\/]react-routing/)
+      cb(null, Boolean(isExternal))
+    }
   ],
   node: {
     console: false,
@@ -198,25 +163,15 @@ const serverConfig = merge({}, config, {
     process: false,
     Buffer: false,
     __filename: false,
-    __dirname: false,
+    __dirname: false
   },
   devtool: 'source-map',
   plugins: [
     ...config.plugins,
-    new webpack.DefinePlugin(GLOBALS),
+    new webpack.DefinePlugin({ ...GLOBALS, 'process.env.BROWSER': false }),
     new webpack.BannerPlugin('require("source-map-support").install();',
-      { raw: true, entryOnly: false }),
-  ],
-  module: {
-    loaders: [
-      JS_LOADER,
-      ...config.module.loaders,
-      {
-        test: /\.css$/,
-        loader: 'css-loader!postcss-loader',
-      },
-    ],
-  },
-});
+      { raw: true, entryOnly: false })
+  ]
+})
 
-export default [appConfig, serverConfig];
+export default [clientConfig, serverConfig]

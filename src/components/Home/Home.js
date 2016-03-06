@@ -1,25 +1,25 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 
-import { Modal, Button, Dropdown, Alert } from 'react-bootstrap';
+import { Modal, Button, Dropdown, Alert } from 'react-bootstrap'
 
-import { Link } from 'react-router';
+import { Link } from 'react-router'
 
-import { hash } from '../../utils/utils';
+import { hash } from '../../utils/utils'
 
-import { ChatLink, UserLink } from '../Links';
+import { ChatLink, UserLink } from '../Links'
 
-import ApiClient from '../../core/ApiClient';
+import ApiClient from '../../core/ApiClient'
 
-import io from 'socket.io-client';
+import io from 'socket.io-client'
 
-import withStyles from '../../decorators/withStyles';
-import styles from './Home.less';
+import withStyles from '../../decorators/withStyles'
+import styles from './Home.less'
 
 @withStyles(styles)
 class Home extends Component {
 
-  constructor() {
-    super();
+  constructor () {
+    super()
 
     this.state = {
       rooms: [],
@@ -38,258 +38,243 @@ class Home extends Component {
 
     }
 
-    this.socket = null;
-    this.userJoinedHandler = null;
-    this.userLeftHandler = null;
-    this.chatUpdatedHandler = null;
+    this.socket = null
+    this.userJoinedHandler = null
+    this.userLeftHandler = null
+    this.chatUpdatedHandler = null
   }
 
-  setUserJoined(handler) {
-
-    this.userJoinedHandler = handler ? handler : null;
+  setUserJoined (handler) {
+    this.userJoinedHandler = handler
   }
 
-  setUserLeft(handler) {
-    this.userLeftHandler = handler ? handler : null;
+  setUserLeft (handler) {
+    this.userLeftHandler = handler
   }
 
-  setChatUpdated(handler) {
-    this.chatUpdatedHandler = handler ? handler : null;
+  setChatUpdated (handler) {
+    this.chatUpdatedHandler = handler
   }
 
-  setupSocket(socket) {
-
+  setupSocket (socket) {
     socket.on('disconnect', () => {
-      console.log("SocketClient disconnected from server ");
-
-    });
+      console.log('SocketClient disconnected from server')
+    })
 
     socket.on('connect', () => {
-      console.log("SocketClient connected to server");
-
-    });
+      console.log('SocketClient connected to server')
+    })
 
     socket.on('userJoined', (status) => {
-      console.log(status);
-      let parsed = JSON.parse(status);
-      console.log(`${parsed.User.nickname} joined`);
+      console.log(status)
+      let parsed = JSON.parse(status)
+      console.log(`${parsed.User.nickname} joined`)
 
-      if(!this.userJoinedHandler) {
-        console.log("No one is listening")
+      if (!this.userJoinedHandler) {
+        console.log('No one is listening')
       } else {
-        this.userJoinedHandler(parsed);
+        this.userJoinedHandler(parsed)
       }
-
-
-    });
+    })
 
     socket.on('userLeft', (status) => {
-      let parsed = JSON.parse(status);
-      console.log(`${parsed.User.nickname} left`);
+      let parsed = JSON.parse(status)
+      console.log(`${parsed.User.nickname} left`)
 
-      if(!this.userLeftHandler) {
-        console.log("No one is listening")
+      if (!this.userLeftHandler) {
+        console.log('No one is listening')
       } else {
-        this.userLeftHandler(parsed);
+        this.userLeftHandler(parsed)
       }
-    });
+    })
 
     socket.on('chatUpdated', (message) => {
-      console.log("Message arrived");
-      let parsed = JSON.parse(message);
-
-      if(!this.chatUpdatedHandler) {
-        console.log("No one is listening")
+      console.log('Message arrived')
+      let parsed = JSON.parse(message)
+      if (!this.chatUpdatedHandler) {
+        console.log('No one is listening')
       } else {
-        this.chatUpdatedHandler(parsed);
+        this.chatUpdatedHandler(parsed)
       }
-    });
+    })
   }
 
-  async loadStateFromServer() {
+  async loadStateFromServer () {
     try {
-      let rooms = ApiClient.rooms();
-      let friends = ApiClient.friends();
-      let invites = ApiClient.invites();
-      let requests = ApiClient.requests();
+      let rooms = ApiClient.rooms()
+      let friends = ApiClient.friends()
+      let invites = ApiClient.invites()
+      let requests = ApiClient.requests()
 
       this.setState({
         rooms: await rooms,
         friends: await friends,
         invites: await invites,
         requests: await requests
-      });
+      })
     } catch (err) {
-      console.error(err);
+      console.error(err)
     }
   }
 
-  componentDidMount() {
-    console.log("Mounting home");
+  componentDidMount () {
+    console.log('Mounting home')
 
-    this.loadStateFromServer.call(this);
+    this.loadStateFromServer()
 
-    let socket = this.props.getSocket();
+    let socket = this.props.getSocket()
 
-    if(socket == null) {
-      console.log("Socket is null, creating");
-      socket = this.socket = io.connect();
-      this.setupSocket.call(this, socket);
-      this.props.setSocket(socket);
+    if (!socket) {
+      console.log('Socket is null, creating')
+      socket = this.socket = io.connect()
+      this.setupSocket(socket)
+      this.props.setSocket(socket)
     } else {
-      console.log("Reconnecting");
-      this.socket = socket;
-      socket.io.reconnect();
-      this.setupSocket.call(this, socket);
+      console.log('Reconnecting')
+      this.socket = socket
+      socket.io.reconnect()
+      this.setupSocket(socket)
     }
-
   }
-
-  componentWillUnmount() {
-    console.log("Unmounting home");
-    if(this.socket) {
-      this.socket.io.disconnect();
+  componentWillUnmount () {
+    console.log('Unmounting home')
+    if (this.socket) {
+      this.socket.io.disconnect()
     }
   }
 
-  addFriendModalOpen() {
-    this.setState({ addFriendModalOpen: true });
+  addFriendModalOpen () {
+    this.setState({ addFriendModalOpen: true })
   }
 
-  addFriendModalClose() {
+  addFriendModalClose () {
     this.setState({
       addFriendModalOpen: false,
       addFriendModalEmailInput: '',
       addFriendModalEmailError: ''
-     });
+    })
   }
 
-  createRoomModalOpen() {
-    this.setState({ createRoomModalOpen: true });
+  createRoomModalOpen () {
+    this.setState({ createRoomModalOpen: true })
   }
 
-  createRoomModalClose() {
+  createRoomModalClose () {
     this.setState({
       createRoomModalOpen: false,
       createRoomNameInput: '',
       joinRoomTokenInput: '',
       joinRoomTokenError: ''
-    });
+    })
   }
 
-  async inviteFriend() {
-    console.log("DASDAS");
-    if(this.state.addFriendModalEmailInput
-      && this.state.addFriendModalEmailInput.indexOf('@') !== -1){
-        console.log("Check Ok");
-        try {
-          await ApiClient.invite(hash(this.state.addFriendModalEmailInput));
-          const user = await ApiClient.user(hash(this.state.addFriendModalEmailInput));
-          let tmp = this.state.invites.slice(0);
-          tmp.push(user);
-          this.setState({ invites: tmp });
-          this.addFriendModalClose.call(this);
-        } catch(err) {
-          console.log("Err");
-          if(err.status == 404) {
-            this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} doesn't exist` });
-          } else if(err.status == 400) {
-            if(err.body.reasonCode == 20)
-              this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} is already your friend` });
-            else if(err.body.reasonCode == 21)
-              this.setState({ addFriendModalEmailError: `An invitation for ${this.state.addFriendModalEmailInput} is already pending` });
-            else if(err.body.reasonCode == 22)
-              this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} sent you a request already. Accept that to become friends!` });
-            else if(err.body.reasonCode == 23)
-              this.setState({ addFriendModalEmailError: `You can't invite yourself!` });
-            else {
-              console.error(err);
-            }
-          } else {
-            console.log(err);
-          }
-        }
-    } else {
-      this.setState({ addFriendModalEmailError: 'Enter a valid email address' });
-    }
-
-  }
-
-  removeRoomFromList(id) {
-    let rooms = this.state.rooms.filter((room) => room.id !== id);
-    this.setState({ rooms: rooms });
-  }
-
-  async joinRoom() {
-    if(this.state.joinRoomTokenInput) {
+  async inviteFriend () {
+    if (this.state.addFriendModalEmailInput && this.state.addFriendModalEmailInput.indexOf('@') !== -1) {
       try {
-        console.log("join room called");
-        const room = await ApiClient.joinRoom(this.state.joinRoomTokenInput);
-        let new_ = this.state.rooms.slice(0);
-        new_.push(Object.assign(room, {admin: true}));
-        this.setState({ rooms: new_ });
-      } catch(err) {
-        if(err.status == 400) {
-          if(err.body.reasonCode == 11) {
-            this.setState( { joinRoomTokenError: 'You are already a member'});
-          } else if(err.body.reasonCode == 12) {
-            this.setState( { joinRoomTokenError: 'Invalid token'} );
+        await ApiClient.invite(hash(this.state.addFriendModalEmailInput))
+        const user = await ApiClient.user(hash(this.state.addFriendModalEmailInput))
+        let tmp = this.state.invites.slice(0)
+        tmp.push(user)
+        this.setState({ invites: tmp })
+        this.addFriendModalClose()
+      } catch (err) {
+        console.log('Err')
+        if (err.status === 404) {
+          this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} doesn't exist` })
+        } else if (err.status === 400) {
+          if (err.body.reasonCode === 20) {
+            this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} is already your friend` })
+          } else if (err.body.reasonCode === 21) {
+            this.setState({ addFriendModalEmailError: `An invitation for ${this.state.addFriendModalEmailInput} is already pending` })
+          } else if (err.body.reasonCode === 22) {
+            this.setState({ addFriendModalEmailError: `${this.state.addFriendModalEmailInput} sent you a request already. Accept that to become friends!` })
+          } else if (err.body.reasonCode === 23) {
+            this.setState({ addFriendModalEmailError: `You can't invite yourself!` })
           } else {
-            console.error(err);
+            console.error(err)
           }
-        } else if (err.status == 404) {
-          this.setState( { joinRoomTokenError: 'This room was probably deleted'});
         } else {
-          console.error(err);
+          console.log(err)
         }
       }
     } else {
-      this.setState( { joinRoomTokenError: 'Enter your token'});
+      this.setState({ addFriendModalEmailError: 'Enter a valid email address' })
     }
   }
 
-  async renameRoom(id, newName, cb) {
-    let room = this.state.rooms.filter((room) => room.id == id)[0];
+  removeRoomFromList (id) {
+    let rooms = this.state.rooms.filter((room) => room.id !== id)
+    this.setState({ rooms: rooms })
+  }
+
+  async joinRoom () {
+    if (this.state.joinRoomTokenInput) {
+      try {
+        console.log('join room called')
+        const room = await ApiClient.joinRoom(this.state.joinRoomTokenInput)
+        let new_ = this.state.rooms.slice(0)
+        new_.push(Object.assign(room, {admin: true}))
+        this.setState({ rooms: new_ })
+      } catch (err) {
+        if (err.status === 400) {
+          if (err.body.reasonCode === 11) {
+            this.setState({ joinRoomTokenError: 'You are already a member' })
+          } else if (err.body.reasonCode === 12) {
+            this.setState({ joinRoomTokenError: 'Invalid token' })
+          } else {
+            console.error(err)
+          }
+        } else if (err.status === 404) {
+          this.setState({ joinRoomTokenError: 'This room was probably deleted' })
+        } else {
+          console.error(err)
+        }
+      }
+    } else {
+      this.setState({ joinRoomTokenError: 'Enter your token' })
+    }
+  }
+
+  async renameRoom (id, newName, cb) {
     try {
-      await ApiClient.renameRoom(this.props.params.roomid, newName);
-      let rooms = this.state.rooms.map((room) => room.id == id ? Object.assign(room, {name: newName}) : room );
-      this.setState({ rooms: rooms });
-      cb();
+      await ApiClient.renameRoom(this.props.params.roomid, newName)
+      let rooms = this.state.rooms.map((room) => room.id === id ? Object.assign(room, {name: newName}) : room)
+      this.setState({ rooms: rooms })
+      cb()
     } catch (err) {
-      cb(err);
+      cb(err)
     }
   }
 
-  async createRoom() {
+  async createRoom () {
     try {
-      console.log("Create room called");
-      const room = await ApiClient.createRoom(this.state.createRoomNameInput);
-      let new_ = this.state.rooms.slice(0);
-      new_.push(Object.assign(room, {admin: true}));
-      this.setState({ rooms: new_ });
-    } catch(err) {
-      console.warn(`Home: Server returned ${err}`);
+      console.log('Create room called')
+      const room = await ApiClient.createRoom(this.state.createRoomNameInput)
+      let new_ = this.state.rooms.slice(0)
+      new_.push(Object.assign(room, {admin: true}))
+      this.setState({ rooms: new_ })
+    } catch (err) {
+      console.warn(`Home: Server returned ${err}`)
     }
-    this.createRoomModalClose.call(this);
-
+    this.createRoomModalClose()
   }
 
-  async accept(userid) {
+  async accept (userid) {
     try {
-      await ApiClient.accept(userid);
+      await ApiClient.accept(userid)
       let newFriends = this.state.requests.filter((user) => {
-        return hash(user.email) === userid});
+        return hash(user.email) === userid
+      })
       let newRequests = this.state.requests.filter((user) => {
-        return hash(user.email) !== userid});
-      let tmp = this.state.friends.concat(newFriends);
-
-      this.setState({ friends: newFriends, requests: newRequests });
-    } catch(err) {
-      console.error(err);
+        return hash(user.email) !== userid
+      })
+      this.setState({ friends: newFriends, requests: newRequests })
+    } catch (err) {
+      console.error(err)
     }
   }
 
-  renderSearch() {
+  renderSearch () {
     return (
       <div className="row">
        <div className="col-xs-12">
@@ -316,10 +301,10 @@ class Home extends Component {
           </Dropdown>
         </div>
       </div>
-    );
+    )
   }
 
-  render() {
+  render () {
     return this.props.children
       ? React.cloneElement(
         this.props.children,
@@ -331,59 +316,58 @@ class Home extends Component {
           renameRoom: this.renameRoom.bind(this),
           removeRoomFromList: this.removeRoomFromList.bind(this)
         })
-      : this.renderHome.call(this);
+      : this.renderHome()
   }
 
-
-  renderHome() {
+  renderHome () {
     let rooms = this.state.rooms.map((room) => {
-      return(
+      return (
         <tr key={room.id} >
           { room.admin ? <td><span className="glyphicon glyphicon-star" aria-hidden="true"></span></td> : <td></td> }
           <td><ChatLink id={room.id}>{room.name}</ChatLink></td>
           <td><Link to={`/home/room/${encodeURIComponent(room.id)}`}><span className="glyphicon glyphicon-cog" aria-hidden="true"></span></Link></td>
         </tr>
-      );
-    });
+      )
+    })
 
     let friends = this.state.friends.map((friend) => {
-      return(
+      return (
         <tr key={friend.email}>
           <td><ChatLink Private={true} id={hash(friend.email)}>{friend.nickname}</ChatLink></td>
           <td></td>
         </tr>
-      );
-    });
+      )
+    })
 
     let requests = this.state.requests.map((request) => {
-      console.log(request);
-      return(
+      console.log(request)
+      return (
         <tr className="warning" key={request.email}>
           <td><UserLink email={request.email}>{request.nickname}</UserLink></td>
           <td>
             <button
-              onClick={(e) => { this.accept(hash(request.email))} }
+              onClick={(e) => { this.accept(hash(request.email)) } }
               className="btn btn-xs btn-success">
               <span className="glyphicon glyphicon-ok" aria-hidden="true"></span>
             </button>
           </td>
         </tr>
-      );
-    });
+      )
+    })
 
     let invites = this.state.invites.map((invite) => {
-      console.log(invite);
-      return(
+      console.log(invite)
+      return (
         <tr className="info" key={invite.email}>
           <td><UserLink email={invite.email}>{invite.nickname}</UserLink></td>
           <td><span className="badge">sent</span></td>
         </tr>
-      );
-    });
+      )
+    })
 
     return (
     <div>
-      {this.renderSearch.call(this)}
+      { this.renderSearch() }
       <div className="row">
         <div className="col-xs-12 col-md-6">
           <div className="row">
@@ -457,7 +441,7 @@ class Home extends Component {
             id="createRoomInputRoomName"
             placeholder="Room name"
             value={this.state.createRoomNameInput}
-            onChange={(e) => this.setState({ createRoomNameInput: e.target.value})} />
+            onChange={(e) => this.setState({ createRoomNameInput: e.target.value })} />
           <Button className ="btn btn-primary" onClick={this.createRoom.bind(this)}>Create</Button>
           <hr></hr>
           <h4>{"... or enter your token here, if someone invited you someplace"}</h4>
@@ -469,7 +453,7 @@ class Home extends Component {
             id="joinRoomInputRoomToken"
             placeholder="Token"
             value={this.state.joinRoomTokenInput}
-            onChange={(e) => this.setState({ joinRoomTokenInput: e.target.value})} />
+            onChange={(e) => this.setState({ joinRoomTokenInput: e.target.value })} />
           <Button className ="btn btn-success" onClick={this.joinRoom.bind(this)}>Join</Button>
         </Modal.Body>
         <Modal.Footer>
@@ -491,7 +475,7 @@ class Home extends Component {
               placeholder="Email or nickname"
               noValidate={true}
               value={this.state.addFriendModalEmailInput}
-              onChange={(e) => this.setState({ addFriendModalEmailInput: e.target.value})} />
+              onChange={(e) => this.setState({ addFriendModalEmailInput: e.target.value })} />
             { this.state.addFriendModalEmailError ? <Alert bsStyle="danger" >{this.state.addFriendModalEmailError}</Alert> : '' }
           </Modal.Body>
           <Modal.Footer>
@@ -500,8 +484,8 @@ class Home extends Component {
           </Modal.Footer>
         </Modal>
     </div>
-    );
+    )
   }
 }
 
-export default Home;
+export default Home

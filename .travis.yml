@@ -1,10 +1,7 @@
 sudo: false
 language: node_js
 node_js:
-  - '4.1'
-
-notifications:
-  slack: gdsa2015:kNg7P3o0KbDnPEJL1Q5tnd6b
+  - '5.7'
 
 deploy:
   app: yacha
