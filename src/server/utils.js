@@ -9,6 +9,7 @@ export function sha256Hash(value) {
 }
 
 export function prettyLog(message, lvl = 'INFO') {
+  // es-lint-disable no-console
   let log = console.log;
 
   if (lvl === 'ERROR' || lvl === 'FATAL') {
