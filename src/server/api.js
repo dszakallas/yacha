@@ -1,16 +1,14 @@
-/*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
-
 import { Router } from 'express';
 
 import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
 
 import bodyParser from 'body-parser';
-import async from 'async'
+import async from 'async';
 
 import createRedisClient from './redis';
 import emailClient from './email';
-import { prettyLog, hash, sha256Hash } from '../utils/utils';
+import { prettyLog, hash } from './utils';
 
 prettyLog('                        888             ');
 prettyLog('                        888             ');

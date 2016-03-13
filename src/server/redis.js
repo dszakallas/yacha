@@ -1,9 +1,6 @@
 import Redis from 'ioredis';
-import url from 'url';
-import { prettyLog } from '../utils/utils';;
 
 export default function createRedisClient(cb) {
-
   let redisClient;
   if (process.env.REDISCLOUD_URL) {
     redisClient = new Redis(process.env.REDISCLOUD_URL);
@@ -12,9 +9,10 @@ export default function createRedisClient(cb) {
   }
 
   redisClient.on('connect', () => {
-      if(cb) cb();
+    if (cb) {
+      cb();
+    }
   });
 
   return redisClient;
-
 }

@@ -2,9 +2,9 @@
 
 import React, { Component } from 'react';
 
-import { googleAnalyticsId } from '../../config';
+import { googleAnalyticsId } from './config';
 
-class Html extends Component {
+class App extends Component {
 
   trackingCode() {
     return ({__html:
@@ -38,4 +38,4 @@ class Html extends Component {
   }
 }
 
-export default Html;
+export default App;

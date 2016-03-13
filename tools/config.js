@@ -13,7 +13,7 @@ import merge from 'lodash.merge';
 
 const DEBUG = !process.argv.includes('release');
 const VERBOSE = process.argv.includes('verbose');
-const WATCH = process.env.WATCH === undefined ? false : process.env.WATCH;
+const WATCH = !!process.env.WATCH;
 const AUTOPREFIXER_BROWSERS = [
   'Android 2.3',
   'Android >= 4',
@@ -176,7 +176,7 @@ const appConfig = merge({}, config, {
 // -----------------------------------------------------------------------------
 
 const serverConfig = merge({}, config, {
-  entry: './src/server.js',
+  entry: './src/server/index.js',
   output: {
     path: './build',
     filename: 'server.js',
