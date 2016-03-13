@@ -1,8 +1,6 @@
 import { Router } from 'express';
-
 import cookieParser from 'cookie-parser';
 import crypto from 'crypto';
-
 import bodyParser from 'body-parser';
 import async from 'async';
 
@@ -24,10 +22,9 @@ prettyLog(' "Y88P"                                 ');
 prettyLog('                                        ');
 prettyLog('*-------* YET ANOTHER CHAT APP *-------*');
 prettyLog('|                                      |');
-prettyLog('|Copyright (c) 2015 David Szakallas    |');
-prettyLog('|                   Gergo Gembolya     |');
+prettyLog('|Copyright (c) 2016 David Szakallas    |');
+prettyLog('|              2015 Gergo Gembolya     |');
 prettyLog('*--------------------------------------*');
-
 
 const api = new Router();
 api.use(cookieParser());

@@ -1,6 +1,8 @@
 /*! React Starter Kit | MIT License | http://www.reactstarterkit.com/ */
 
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom/server';
+import { Router } from 'express';
 
 import { googleAnalyticsId } from './config';
 
@@ -38,4 +40,11 @@ class App extends Component {
   }
 }
 
-export default App;
+const app = new Router();
+
+app.get('*', (req, res) => {
+  const html = ReactDOM.renderToStaticMarkup(<App />);
+  res.send(html);
+});
+
+export default app;
