@@ -20,30 +20,17 @@ import ApiClient from '../../core/ApiClient';
 import Header from '../Header';
 import Footer from '../Footer';
 
-
-let socket = null;
-
 const Layout = React.createClass({
 
   componentDidMount() {
     console.log("Header mounted");
   },
 
-  getSocket() {
-    return socket;
-  },
-
-  setSocket(_socket) {
-    console.log("Setting socket");
-    socket = _socket;
-  },
-
   render: function(){
     return (
       <div>
         <Header {...this.props} />
-        {this.props.children && React.cloneElement(
-          this.props.children, { setSocket: this.setSocket, getSocket: this.getSocket }) }
+        { this.props.children }
         <Footer />
       </div>
     );
@@ -67,12 +54,10 @@ class App extends Component {
   }
 
   componentWillMount() {
-    //ApiClient.onChange = this.updateAuth.bind(this);
     ApiClient.login();
   }
 
   componentWillUnmount() {
-    //ApiClient.onChange = () => {};
   }
 
   componentDidMount() {

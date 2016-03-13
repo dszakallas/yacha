@@ -36,22 +36,6 @@ class Chat extends Component {
     }
   }
 
-  setupSockets(id, Private) {
-    this.props.setUserJoined((m) => {
-      this.setState({timeline: this.state.timeline.concat([m])});
-    });
-    this.props.setUserLeft((m) => {
-      this.setState({timeline: this.state.timeline.concat([m])});
-    });
-    this.props.setChatUpdated((m) => {
-      this.setState({ timeline: this.state.timeline.concat([m])});
-    });
-
-    console.log("Handlers set. Joining room");
-
-    this.props.socket.emit('join', { id: id, Private: Private});
-  }
-
   async componentDidMount() {
 
     let Private;
@@ -74,8 +58,6 @@ class Chat extends Component {
 
     this.getRoomData.call(this, id, Private);
 
-    this.setupSockets.call(this, id, Private);
-
   }
 
   async componentWillUnmount() {
@@ -86,8 +68,6 @@ class Chat extends Component {
     this.props.setChatUpdated();
 
     console.log("Handlers torn down. Leaving room...");
-
-    this.props.socket.emit('leave');
 
   }
 
@@ -139,7 +119,6 @@ class Chat extends Component {
   sendMessage(e) {
     e.preventDefault();
     let message = this.state.message;
-    this.props.socket.emit('updateChat', { Message: message, ClientTimestamp: new Date()});
     this.setState({ message: '' });
   }
 

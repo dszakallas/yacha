@@ -1,391 +1,136 @@
-
-import request from 'superagent';
 import storage from './storage';
 
-function apiUrl(path) {
-    return `/api${path}`;
-}
 
 const ApiClient = {
 
-  getToken: () => {
-    return storage.token;
-  },
-
-  getUser: () => {
+  getUser() {
     return storage.user ? JSON.parse(storage.user) : null;
   },
 
-  loggedIn: () => {
+  loggedIn() {
     return !!storage.user;
   },
 
-  onChange: () => {},
-
-  login: (email, password) => new Promise((resolve, reject) => {
-
+  async login(email, password) {
     if (storage.user) {
-      let user = JSON.parse(storage.user);
-      if(user && user.email && user.nickname) {
-        resolve(user);
-        ApiClient.onChange(null, user);
-        return;
-      }
+      return JSON.parse(storage.user);
     }
+    const user = await Promise.resolve({ nickname: 'mock_user', email: 'mock_user@neverland.io'});
+    storage.user = JSON.stringify(user);
+    return user;
+  },
+
+  async logout() {
     delete storage.user;
-    request
-      .post(apiUrl('/login'))
-      .send({email: email, password: password})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(err);
-          ApiClient.onChange(err, null);
-        } else {
-          storage.token = res.header['X-Yacha-AuthToken'];
-          storage.user = JSON.stringify(res.body);
-          resolve(res.body);
-          ApiClient.onChange(null, JSON.parse(storage.user));
-        }
-      });
-  }),
+  },
 
-  logout: () => new Promise((resolve, reject) => {
-    delete storage.token;
-    delete storage.user;
-    request
-      .post(apiUrl('/logout'))
-      .end((err, res) => {
-        if(err)
-          console.error(err);
-      });
-    resolve();
-    ApiClient.onChange();
-  }),
+  async verify(forgot, token) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  verify: (forgot, token) => new Promise((resolve, reject) => {
-    const url = forgot ? apiUrl('/forgot/verify') : apiUrl('/activate/verify')
-    request
-      .post(url)
-      .send({token: token})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          storage.token = res.header['X-Yacha-AuthToken'];
-          storage.user = JSON.stringify(res.body);
-          resolve(res.body);
-        }
-      });
-  }),
+  async changePassword(password) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  changePassword: (password) => new Promise((resolve, reject) => {
-    request
-      .put(apiUrl('/user'))
-      .send({password : password})
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async rooms() {
+    return await Promise.resolve([
+      { id: 'roomid0', name: 'fancyRoom0', private: false },
+      { id: 'roomid1', name: 'fancyRoom1', admin: true, private: false },
+    ]);
+  },
 
-  rooms: () => new Promise((resolve, reject) => {
-    request
-      .get(apiUrl('/user/rooms'))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async room(id) {
+    return await Promise.resolve({
+      id: 'roomid0',
+      name: 'fancyRoom0',
+      admins: [ { nickname: 'someone', email: 'someone@akarmi.com' } ],
+      members: [ { nickname: 'else', email: 'else@akarmi.com' } ],
+      private: false,
+    });
+  },
 
-  room: (id) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(id);
-    request
-      .get(apiUrl(`/user/rooms/${encoded}`))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async renameRoom(id, newName) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  renameRoom: (id, newName) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(id);
-    request
-      .put(apiUrl(`/user/rooms/${encoded}`))
-      .send({name : name})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async leave(roomid) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  leave: (roomid) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(roomid);
-    request
-      .del(apiUrl(`/user/rooms/${encoded}`))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async roomInvite(roomid, emailHash) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  roomInvite: (roomid, emailHash) => new Promise((resolve, reject) => {
-    let encodedRoomid = encodeURIComponent(roomid);
-    let encodedEmail = encodeURIComponent(emailHash);
-    request
-      .post(apiUrl(`/user/admin/rooms/${encodedRoomid}/invite/${encodedEmail}`))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async joinRoom(token) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  renameRoom: (roomid, name) => new Promise((resolve, reject) => {
-    let encodedRoomid = encodeURIComponent(roomid);
-    request
-      .put(apiUrl(`/user/admin/rooms/${encodedRoomid}`))
-      .send({name: name})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async messages(id, Private) {
+    return Promise.resolve(
+      [{
+        User: {
+          id: 'userid0',
+          nickname: 'someone'
+        },
+        ServerTimestamp: 'fadsfasdf',
+        Message: 'blablsaldflsadlf'
+      }, {
+        User: {
+          id: 'userid1',
+          nickname: 'else'
+        },
+        ServerTimestamp: '543523464326',
+        Message: 'i dont get it'
+      }]
+    );
+  },
 
-  joinRoom: (token) => new Promise((resolve, reject) => {
-    request
-      .post(apiUrl(`/user/join`))
-      .send({token: token})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async createRoom(name) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  messages: (id, Private) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(id);
-    if(Private) {
-      request
-        .get(apiUrl(`/user/pm/${encoded}`))
-        .end((err, res) => {
-          if(err)
-            reject(res);
-          else {
-            resolve(res.body);
-          }
-        });
+  async deleteRoom(id) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-    } else {
-      request
-        .get(apiUrl(`/user/rooms/${encoded}/messages`))
-        .end((err, res) => {
-          if(err)
-            reject(res);
-          else {
-            resolve(res.body);
-          }
-        });
-    }
-  }),
+  async friends() {
+    return await Promise.resolve([
+      { nickname: 'danny', email: 'danny@rad.io' },
+      { nickname: 'lisa', email: 'lisa@rad.io' },
+    ]);
+  },
 
-  createRoom: (name) => new Promise((resolve, reject) => {
-    request
-      .post(apiUrl('/user/admin/rooms'))
-      .send({name: name})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async invites() {
+    return await Promise.resolve([
+      { nickname: 'someone u invited', email: 'cat@rad.io' },
+    ]);
+  },
 
-  deleteRoom: (id) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(id);
-    request
-      .del(apiUrl(`/user/admin/rooms/${encoded}`))
-      .send({name: name})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async requests() {
+    return await Promise.resolve([
+      { nickname: 'someone invited u', email: 'cat@rad.io' },
+    ]);
+  },
 
-  friends: () => new Promise((resolve, reject) => {
-    request
-      .get(apiUrl('/user/friends'))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async invite(userid) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  invites: () => new Promise((resolve, reject) => {
-    request
-      .get(apiUrl('/user/invites'))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async accept(userid) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  requests: () => new Promise((resolve, reject) => {
-    request
-      .get(apiUrl('/user/requests'))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async registerAndSendActivation(email, username, password) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 
-  invite: (userid) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(userid);
-    request
-      .post(apiUrl(`/user/invite/${encoded}`))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
+  async user(userid) {
+    return await Promise.resolve({ nickname: 'mock_user', email: 'mock_user@neverland.io'})
+  },
 
-  accept: (userid) => new Promise((resolve, reject) => {
-    let encoded = encodeURIComponent(userid);
-    request
-      .post(apiUrl(`/user/accept/${encoded}`))
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject(res);
-        } else {
-          resolve(res.body);
-        }
-      });
-  }),
-
-  registerAndSendActivation: (email, username, password) => new Promise((resolve, reject) => {
-    request
-      .post(apiUrl('/register'))
-      .send({email: email, username: username, password: password})
-      /*.accept('application/json')*/
-      .end((err, res) => {
-        if (err) {
-          reject({
-            register: res
-          });
-        } else {
-          request
-            .post(apiUrl('/activate/send'))
-            .send({email: email})
-            .end((err, activateRes) => {
-              if(err) {
-                console.log("Failed to activate");
-                reject({
-                  activate: activateRes
-                });
-              } else {
-                resolve({
-                  register: res.body,
-                  activate: activateRes.body
-                });
-              }
-            });
-        }
-      });
-  }),
-
-
-
-  user: (userid) => new Promise((resolve, reject) => {
-    if(!userid) {
-      request
-        .get(apiUrl('/user'))
-        .end((err, res) => {
-          if(err)
-            reject(res);
-          else {
-            resolve(res.body);
-          }
-        });
-    } else {
-      let encoded = encodeURIComponent(userid);
-      request
-        .get(apiUrl(`/users/${encoded}`))
-        .end((err, res) => {
-          if(err)
-            reject(res);
-          else {
-            resolve(res.body);
-          }
-        });
-    }
-
-  }),
-
-  sendForgot: (email) => new Promise((resolve, reject) => {
-    request
-      .post(apiUrl('/forgot/send'))
-      .send({email: email})
-      .end((err, res) => {
-        if(err)
-          reject(res);
-        else {
-          resolve(res.body);
-        }
-      });
-  })
+  async sendForgot(email) {
+    return await Promise.reject(new Error('not implemented'));
+  },
 };
 
 export default ApiClient;

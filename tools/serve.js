@@ -48,8 +48,7 @@ export default task('serve', () => new Promise((resolve, reject) => {
     });
   }
 
-  if(process.env.BROWSERSYNC) {
-
+  if (process.env.BROWSERSYNC) {
     const webpackConfig = require('./config')[0]; // Client-side bundle configuration
     const bundler = webpack(webpackConfig);
 
@@ -85,7 +84,5 @@ export default task('serve', () => new Promise((resolve, reject) => {
         'build/templates/**/*.*',
       ],
     });
-
   }
-
 }));
